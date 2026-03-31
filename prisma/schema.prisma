@@ -1,0 +1,127 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  STAFF_CAREGIVER
+  STAFF_NURSE
+  STAFF_SOCIAL_WORKER
+  STAFF_OFFICE
+  STAFF_NUTRITIONIST
+}
+
+enum EvalStatus {
+  DRAFT
+  SELF_SUBMITTED
+  MANAGER_REVIEWED
+  FINALIZED
+}
+
+enum IncidentType {
+  NEAR_MISS
+  ACCIDENT
+  IMPROVEMENT_IDEA
+}
+
+model User {
+  id               String           @id @default(uuid())
+  email            String           @unique
+  fullName         String
+  role             Role
+  gradeLevel       Int              @default(1) // 等級: 1-7
+  department       String
+  welfarePoints    Int              @default(0) // 健康・ボランティア等の蓄積ポイント
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  evaluations      Evaluation[]     @relation("EmployeeEvals")
+  evaluatorEvals   Evaluation[]     @relation("EvaluatorEvals")
+  givenBonuses     PeerBonus[]      @relation("BonusSender")
+  receivedBonuses  PeerBonus[]      @relation("BonusReceiver")
+  incidents        IncidentReport[]
+  goals            Goal[]
+  healthLogs       HealthLog[]
+  oneOnOneNotes    OneOnOneNote[]   @relation("EmployeeNotes")
+}
+
+model Evaluation {
+  id               String     @id @default(uuid())
+  employeeId       String
+  employee         User       @relation("EmployeeEvals", fields: [employeeId], references: [id])
+  evaluatorId      String
+  evaluator        User       @relation("EvaluatorEvals", fields: [evaluatorId], references: [id])
+  periodKey        String     // "2026-H1"
+  status           EvalStatus @default(DRAFT)
+  achievementScore Float      @default(0.0) // 業績(MBO)
+  sentimentScore   Float      @default(0.0) // 情意・安全貢献
+  competencyScore  Float      @default(0.0) // 能力・技能
+  totalScore       Float      @default(0.0)
+  finalGrade       String?    // S, A, B, C, D
+  aiSummaryText    String?    // Geminiが生成した総合評価文
+  updatedAt        DateTime   @updatedAt
+}
+
+model Goal {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  periodKey        String
+  title            String
+  targetValue      Float
+  currentValue     Float    @default(0.0)
+  unit             String   // "件", "%", "回"など
+  isAchieved       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+}
+
+model PeerBonus {
+  id               String   @id @default(uuid())
+  senderId         String
+  sender           User     @relation("BonusSender", fields: [senderId], references: [id])
+  receiverId       String
+  receiver         User     @relation("BonusReceiver", fields: [receiverId], references: [id])
+  points           Int      @default(5)
+  tag              String   // "#チームワーク", "#迅速な対応"
+  message          String
+  createdAt        DateTime @default(now())
+}
+
+model IncidentReport {
+  id               String       @id @default(uuid())
+  reporterId       String
+  reporter         User         @relation(fields: [reporterId], references: [id])
+  type             IncidentType
+  description      String
+  preventionIdea   String?      // 改善策の提案
+  aiEvaluatedPoints Int         @default(0) // Geminiが判定した加点ポイント
+  createdAt        DateTime     @default(now())
+}
+
+model HealthLog {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  activityType     String   // "WALKING", "VOLUNTEER", "HOBBY"
+  value            Int      // 歩数や活動回数
+  earnedPoints     Int      @default(0)
+  proofUrl         String?  // 写真等のエビデンスURL
+  loggedAt         DateTime @default(now())
+}
+
+model OneOnOneNote {
+  id               String   @id @default(uuid())
+  employeeId       String
+  employee         User     @relation("EmployeeNotes", fields: [employeeId], references: [id])
+  managerId        String
+  content          String
+  aiActionItems    String?  // Geminiが抽出した次回の宿題・目標
+  meetingDate      DateTime
+  createdAt        DateTime @default(now())
+}
