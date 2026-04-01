@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       points: aiResult.points,
       feedback: aiResult.feedback
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('API /incident-score error:', error)
     return NextResponse.json({ error: 'Failed to process incident report' }, { status: 500 })
   }

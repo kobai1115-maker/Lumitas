@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { MessageSquareHeart, Reply, MoreVertical } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 
 // 仮のデータ
@@ -31,7 +31,7 @@ const MOCK_BONUSES = [
 ]
 
 export default function BonusFeed({ searchQuery }: { searchQuery: string }) {
-  const [feed, setFeed] = useState(MOCK_BONUSES)
+  const [feed] = useState(MOCK_BONUSES)
 
   // 検索フィルタリング
   const filteredFeed = feed.filter(b => 

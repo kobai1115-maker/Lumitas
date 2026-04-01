@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, Square, Loader2, Sparkles, Check, FileText } from 'lucide-react'
+import { Mic, Square, Loader2, Sparkles, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export default function VoiceInputFab() {
@@ -12,7 +12,7 @@ export default function VoiceInputFab() {
   const [resultCategory, setResultCategory] = useState('')
   
   // 実際にはWeb Speech API等で音声を拾うが、今回はモックとしてタイマー処理
-  const mediaRecorderRef = useRef<any>(null)
+  // 実際にはWeb Speech API等で音声を拾うが、今回はモックとしてタイマー処理
 
   const handleToggleRecord = async () => {
     if (isRecording) {

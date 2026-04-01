@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     // DBへの保存が成功したらクライアントへ返す
     
     return NextResponse.json(aiResult)
-  } catch (error: any) {
+  } catch (error) {
     console.error('API /voice-to-eval error:', error)
     return NextResponse.json({ error: 'Failed to process voice text' }, { status: 500 })
   }

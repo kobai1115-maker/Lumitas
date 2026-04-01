@@ -20,6 +20,7 @@ type Props = {
 export default function ProgressOverview({ profile, scoreData }: Props) {
   return (
     <div className="space-y-4">
+      {/* ユーザー名や役職が必要ならここに {profile.fullName} とかを入れるが、今回は呼び出し元で表示しているので省略 */}
       <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 shadow-sm overflow-hidden relative">
         <div className="absolute top-0 right-0 p-4 opacity-10">
           <Award className="w-24 h-24 text-primary" />

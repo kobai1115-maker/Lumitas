@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
 
-export async function GET(req: Request) {
+
+export async function GET(_req: Request) {
   try {
     // ピアボーナスタイムラインの取得 (モック)
     // const bonuses = await prisma.peerBonus.findMany({
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { receiverId, points, tag, message } = await req.json()
+    await req.json()
     
     // const newBonus = await prisma.peerBonus.create({
     //   data: {

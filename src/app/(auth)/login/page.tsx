@@ -38,8 +38,12 @@ export default function LoginPage() {
         // ログイン成功時にダッシュボードへ遷移
         router.push('/')
       }
-    } catch (error: any) {
-      setErrorText(error.message || 'ログインに失敗しました。')
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorText(error.message)
+      } else {
+        setErrorText('ログインに失敗しました。')
+      }
     } finally {
       setIsLoading(false)
     }

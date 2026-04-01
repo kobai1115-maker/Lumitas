@@ -61,7 +61,13 @@ export default function RoleBasedWidgets({ role, metrics }: Props) {
   )
 }
 
-function WidgetCard({ title, value, desc, icon: Icon, color }: any) {
+function WidgetCard({ title, value, desc, icon: Icon, color }: {
+  title: string;
+  value: string | number;
+  desc?: string;
+  icon: React.ElementType;
+  color: string;
+}) {
   return (
     <Card className="shadow-sm border-gray-100/50">
       <CardContent className="p-4 flex flex-col justify-between h-full">

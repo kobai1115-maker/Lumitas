@@ -19,7 +19,8 @@ const COMMON_TAGS = ['#神対応', '#チームワーク', '#迅速な対応', '#
 // 紙吹雪エフェクト (Framer Motion)
 function Confetti() {
   // Purityルール遵守のため、ランダム値はクライアントサイドでのマウント後に一度だけ生成する
-  const [particles, setParticles] = React.useState<any[]>([])
+  type Particle = { id: number; color: string; scale: number; x: number; y: number; rotate: number; }
+  const [particles, setParticles] = React.useState<Particle[]>([])
 
   React.useEffect(() => {
     const newParticles = Array.from({ length: 50 }).map((_, i) => ({
