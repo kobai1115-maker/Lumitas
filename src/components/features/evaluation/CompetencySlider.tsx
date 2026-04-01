@@ -2,7 +2,15 @@
 
 import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { ShieldCheck, Crosshair, Users, Activity, HelpCircle } from 'lucide-react'
+import { ShieldCheck, Crosshair, Users, Activity, HelpCircle, Target, Brain, Heart } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
 // 今回の評価項目：技術、コミュニケーション、安全配慮、リーダーシップ、倫理など
 const COMPETENCY_ITEMS = [
@@ -23,11 +31,76 @@ export default function CompetencySlider() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-2 px-1">
+      <div className="flex items-center justify-between mb-4 px-1">
         <h3 className="font-bold text-gray-800 text-lg">コンピテンシー自己評価</h3>
-        <button className="text-gray-400 hover:text-gray-600 transition-colors">
-          <HelpCircle className="w-4 h-4" />
-        </button>
+        <Dialog>
+          <DialogTrigger
+            render={
+              <button className="flex items-center gap-1.5 text-primary hover:text-primary/80 transition-colors text-xs font-bold bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
+                <HelpCircle className="w-4 h-4" />
+                評価ガイド
+              </button>
+            }
+          />
+          <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <Brain className="w-6 h-6 text-primary" />
+                人事考課の3要素
+              </DialogTitle>
+              <DialogDescription>
+                評価を付ける際の参考にしてください。
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 mt-4">
+              <section className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex gap-4">
+                <Target className="w-10 h-10 text-blue-500 shrink-0" />
+                <div className="space-y-1.5">
+                  <h4 className="font-bold text-blue-900 border-b border-blue-200 pb-1 flex items-center gap-2">
+                    業績（ぎょうせき）
+                  </h4>
+                  <p className="text-xs text-blue-800 leading-relaxed font-medium">個人や組織で「成し遂げた成果」を評価します。</p>
+                  <ul className="text-[10px] text-blue-700/80 list-disc list-inside space-y-0.5">
+                    <li>目標達成度・記録の完遂数</li>
+                    <li>重大事故の未然防止成果</li>
+                  </ul>
+                </div>
+              </section>
+
+              <section className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 flex gap-4">
+                <Brain className="w-10 h-10 text-emerald-500 shrink-0" />
+                <div className="space-y-1.5">
+                  <h4 className="font-bold text-emerald-900 border-b border-emerald-200 pb-1">能力・成績（せいせき）</h4>
+                  <p className="text-xs text-emerald-800 leading-relaxed font-medium">仕事に必要な「知識・技術」の発揮度を評価します。</p>
+                  <ul className="text-[10px] text-emerald-700/80 list-disc list-inside space-y-0.5">
+                    <li>介助スキル・記録の正確性</li>
+                    <li>他職種連携・リーダーシップ</li>
+                  </ul>
+                </div>
+              </section>
+
+              <section className="bg-rose-50/50 p-4 rounded-xl border border-rose-100 flex gap-4">
+                <Heart className="w-10 h-10 text-rose-500 shrink-0" />
+                <div className="space-y-1.5">
+                  <h4 className="font-bold text-rose-900 border-b border-rose-200 pb-1">情意（じょうい）</h4>
+                  <p className="text-xs text-rose-800 leading-relaxed font-medium">「仕事への姿勢・意欲」を評価します。</p>
+                  <ul className="text-[10px] text-rose-700/80 list-disc list-inside space-y-0.5">
+                    <li>責任感・規律維持・協調性</li>
+                    <li>利用者への配慮・誠実な態度</li>
+                  </ul>
+                </div>
+              </section>
+
+              <div className="p-3 bg-gray-50 rounded-lg text-center">
+                <p className="text-[10px] text-gray-500 leading-relaxed italic">
+                  本システムではAIがあなたの日常の「できたこと・気づき」を拾い上げ、
+                  これら3要素の客観的な蓄積をサポートします。
+                </p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
       
       {COMPETENCY_ITEMS.map((item) => {

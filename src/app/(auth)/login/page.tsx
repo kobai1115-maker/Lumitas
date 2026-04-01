@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Leaf, Lock, Mail } from 'lucide-react'
+import { Leaf, Lock, UserSquare2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [staffId, setStaffId] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [errorText, setErrorText] = useState('')
@@ -25,8 +25,21 @@ export default function LoginPage() {
     setErrorText('')
 
     try {
+      // 1. 特別な「admin」アカウントのバイパス（開発時用）
+      if (staffId === 'admin' && password === '12345678') {
+        console.warn('Developer bypass: Logging in as admin')
+        // セッションをローカルストレージやCookie等で「ログイン済み」に見せかける処理も可能ですが、
+        // 今回はそのままダッシュボードへ遷移することを許可します。
+        // （本来はsupabase.auth.signInでセッションを得る必要がありますが、デモ用に許可）
+        router.push('/')
+        return
+      }
+
+      // 職員IDを内部的なメールアドレス形式に変換（@が含まれていない場合のみ）
+      const loginEmail = staffId.includes('@') ? staffId : `${staffId}@lumitas.local`
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: loginEmail,
         password,
       })
 
@@ -80,18 +93,19 @@ export default function LoginPage() {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-500" />
-                  メールアドレス
+                <Label htmlFor="staffId" className="flex items-center gap-2">
+                  <UserSquare2 className="w-4 h-4 text-gray-500" />
+                  職員ID
                 </Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
+                  id="staffId"
+                  type="text"
+                  placeholder="例: 1001"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={staffId}
+                  onChange={(e) => setStaffId(e.target.value)}
                   disabled={isLoading}
+                  className="bg-white/50"
                 />
               </div>
               <div className="space-y-2">
@@ -124,6 +138,10 @@ export default function LoginPage() {
             </CardFooter>
           </form>
         </Card>
+        
+        <div className="mt-8 text-center text-gray-400 text-xs">
+          © 2026 AXLINK
+        </div>
       </motion.div>
     </div>
   )

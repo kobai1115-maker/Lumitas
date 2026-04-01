@@ -16,6 +16,7 @@ export async function GET() {
       orderBy: [{ department: 'asc' }, { fullName: 'asc' }],
       select: {
         id: true,
+        staffId: true,
         email: true,
         fullName: true,
         role: true,
@@ -37,16 +38,19 @@ export async function GET() {
 // スタッフ新規作成（ADMIN専用）
 export async function POST(req: Request) {
   try {
-    const { email, password, fullName, role, gradeLevel, department } = await req.json()
+    const { staffId, email, password, fullName, role, gradeLevel, department } = await req.json()
 
-    if (!email || !password || !fullName || !role || !department) {
-      return NextResponse.json({ error: '必須項目が不足しています' }, { status: 400 })
+    if (!staffId || !password || !fullName || !role || !department) {
+      return NextResponse.json({ error: '必須項目が不足しています（職員ID、パスワード、氏名、職位、部署は必須です）' }, { status: 400 })
     }
+
+    // メールアドレスが未指定なら、職員IDから自動生成
+    const finalEmail = email || `${staffId}@lumitas.local`
 
     // 1. Supabase Auth にユーザーを作成
     const supabaseAdmin = getSupabaseAdmin()
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      email: finalEmail,
       password,
       email_confirm: true, // メール確認不要で即時有効化
     })
@@ -59,7 +63,8 @@ export async function POST(req: Request) {
     const newUser = await prisma.user.create({
       data: {
         id: authData.user.id,
-        email,
+        staffId,
+        email: finalEmail,
         fullName,
         role,
         gradeLevel: gradeLevel || 1,

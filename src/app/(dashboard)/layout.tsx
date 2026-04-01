@@ -73,6 +73,9 @@ export default function DashboardLayout({
       {/* メインコンテンツ領域 (モバイルではpb-16で下のナビゲーションとの被りを防ぐ） */}
       <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-6 md:pb-8 pb-24 overflow-x-hidden">
         {children}
+        <footer className="mt-8 py-6 border-t border-gray-100 flex justify-center">
+          <p className="text-[10px] text-gray-400 font-medium tracking-widest">© 2026 AXLINK</p>
+        </footer>
       </main>
 
       {/* サブナビゲーション（1on1・組織目標・スタッフ管理）- ボトムナビの上に配置 */}
