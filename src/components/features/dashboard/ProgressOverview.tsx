@@ -17,7 +17,7 @@ type Props = {
   scoreData: ScoreData
 }
 
-export default function ProgressOverview({ profile, scoreData }: Props) {
+export default function ProgressOverview({ scoreData }: Props) {
   return (
     <div className="space-y-4">
       {/* ユーザー名や役職が必要ならここに {profile.fullName} とかを入れるが、今回は呼び出し元で表示しているので省略 */}

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence,PanInfo } from 'framer-motion'
 import { Card, CardContent } from '@/components/ui/card'
-import { Target, CheckCircle2, ChevronRight, XIcon } from 'lucide-react'
+import { Target, CheckCircle2, XIcon } from 'lucide-react'
 
 // 仮の目標データ
 const MOCK_GOALS = [
@@ -13,7 +13,7 @@ const MOCK_GOALS = [
 ]
 
 export default function GoalsPage() {
-  const [goals, setGoals] = useState(MOCK_GOALS)
+  const [goals] = useState(MOCK_GOALS)
   const [currentIndex, setCurrentIndex] = useState(0)
 
   // 目標が全て終わった場合の表示

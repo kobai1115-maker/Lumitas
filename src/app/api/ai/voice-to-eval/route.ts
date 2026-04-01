@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { convertVoiceToEvaluation } from '@/lib/gemini'
+import prisma from '@/lib/prisma'
 
 export const maxDuration = 60 // Cloudflare Pages Edge Runtime / Next.js用のタイムアウト設定
 
@@ -15,8 +16,16 @@ export async function POST(req: Request) {
     const aiResult = await convertVoiceToEvaluation(text)
 
     // 本来はここでDBに保存する処理を入れるなど
+    await prisma.evaluation.create({
+      data: {
+        employeeId: 'demo-user-id',
+        evaluatorId: 'demo-user-id', 
+        periodKey: '2026-H1',
+        aiSummaryText: `[${aiResult.category}] ${aiResult.structuredText}`,
+        status: 'DRAFT'
+      }
+    })
     // DBへの保存が成功したらクライアントへ返す
-    
     return NextResponse.json(aiResult)
   } catch (error) {
     console.error('API /voice-to-eval error:', error)

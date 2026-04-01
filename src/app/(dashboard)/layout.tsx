@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Home, Target, Award, ALargeSmall, Mic, LogOut, CheckSquare } from 'lucide-react'
+import { Home, Target, Award, ALargeSmall, Mic, LogOut, CheckSquare, MessageSquare, Building2, Users } from 'lucide-react'
 import { clsx } from 'clsx'
 import { supabase } from '@/lib/supabase'
 
@@ -18,7 +18,7 @@ export default function DashboardLayout({
 
   // 簡易的なセッション・リダイレクト処理（実運用ではMiddleware推奨）
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(() => {
       // ログアウトなどの動作確認時はコメントアウトするか適切に開発用設定をしてください。
       // if (!session) {
       //   router.push('/login')
@@ -35,11 +35,18 @@ export default function DashboardLayout({
 
   // ボトムナビゲーションの定義 (モバイルファースト)
   const navItems = [
-    { name: 'ホーム', href: '/', icon: Home },
-    { name: '目標・MBO', href: '/goals', icon: Target },
-    { name: '評価(音声)', href: '/evaluation', icon: Mic },
-    { name: 'ピアボーナス', href: '/peer-bonus', icon: Award },
-    { name: 'インシデント', href: '/incident', icon: CheckSquare },
+    { name: 'ホーム',       href: '/',           icon: Home },
+    { name: '目標',         href: '/goals',       icon: Target },
+    { name: '評価',         href: '/evaluation',  icon: Mic },
+    { name: 'ピアボーナス', href: '/peer-bonus',  icon: Award },
+    { name: 'インシデント', href: '/incident',    icon: CheckSquare },
+  ]
+
+  // その他メニュー（サブナビ）
+  const subNavItems = [
+    { name: '1on1面談', href: '/one-on-one',  icon: MessageSquare },
+    { name: '組織目標', href: '/org-goals',   icon: Building2 },
+    { name: 'スタッフ管理', href: '/admin/staff', icon: Users },
   ]
 
   if (!isReady) {
@@ -67,7 +74,32 @@ export default function DashboardLayout({
         {children}
       </main>
 
-      {/* ボトムナビゲーション (全デバイス共通で表示して操作を確認しやすくする) */}
+      {/* サブナビゲーション（1on1・組織目標・スタッフ管理）- ボトムナビの上に配置 */}
+      <nav className="fixed bottom-16 w-full bg-white/90 backdrop-blur border-t border-gray-100 z-40">
+        <div className="flex justify-around items-center h-10 max-w-3xl mx-auto">
+          {subNavItems.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname.startsWith(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={clsx(
+                  "flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-medium transition-all",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                )}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {item.name}
+              </Link>
+            )
+          })}
+        </div>
+      </nav>
+
+      {/* ボトムナビゲーション（メイン5項目） */}
       <nav className="fixed bottom-0 w-full bg-white border-t border-gray-200 z-40 pb-[env(safe-area-inset-bottom)]">
         <div className="flex justify-around items-center h-16 max-w-3xl mx-auto">
           {navItems.map((item) => {
@@ -92,8 +124,6 @@ export default function DashboardLayout({
           })}
         </div>
       </nav>
-      
-      {/* PC表示用のサイドバー（今回はモバイルファーストなので省略気味ですが、拡張可能） */}
     </div>
   )
 }

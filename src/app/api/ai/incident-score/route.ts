@@ -17,15 +17,15 @@ export async function POST(req: Request) {
 
     // 2. 本来はここでDB(Prisma)にIncidentReportモデルとして保存する処理を実装
     // DBへの挿入処理 (ユーザー情報はモック)
-    // const newReport = await prisma.incidentReport.create({
-    //   data: {
-    //     reporterId: 'demo-user-id',
-    //     type: 'NEAR_MISS',
-    //     description,
-    //     preventionIdea,
-    //     aiEvaluatedPoints: aiResult.points
-    //   }
-    // })
+    await prisma.incidentReport.create({
+      data: {
+        reporterId: 'demo-user-id',
+        type: 'NEAR_MISS',
+        description,
+        preventionIdea,
+        aiEvaluatedPoints: aiResult.points
+      }
+    })
 
     // 3. 結果をフロントエンドへ返す
     return NextResponse.json({

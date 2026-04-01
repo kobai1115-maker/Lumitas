@@ -12,7 +12,7 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   
   // 仮のデータ: 実際の運用時はDB/APIからフェッチする
-  const [metrics, setMetrics] = useState<DashboardMetrics>({
+  const [metrics] = useState<DashboardMetrics>({
     completionRate: 85,
     incidentReports: 2,
     skillLevel: 4,

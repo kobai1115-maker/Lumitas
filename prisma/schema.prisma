@@ -30,14 +30,22 @@ enum IncidentType {
   IMPROVEMENT_IDEA
 }
 
+enum OrgGoalLevel {
+  MISSION      // 法人理念（恒久的）
+  CORPORATE    // 法人目標（年度）
+  DEPARTMENT   // 部署目標（年度・部署別）
+}
+
 model User {
   id               String           @id @default(uuid())
   email            String           @unique
   fullName         String
   role             Role
-  gradeLevel       Int              @default(1) // 等級: 1-7
+  gradeLevel       Int              @default(1)
   department       String
-  welfarePoints    Int              @default(0) // 健康・ボランティア等の蓄積ポイント
+  welfarePoints    Int              @default(0)
+  isActive         Boolean          @default(true)  // アカウント有効フラグ
+  mustChangePassword Boolean        @default(true)  // 初回ログイン時パスワード変更フラグ
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -49,6 +57,25 @@ model User {
   goals            Goal[]
   healthLogs       HealthLog[]
   oneOnOneNotes    OneOnOneNote[]   @relation("EmployeeNotes")
+  conductedMeetings OneOnOneNote[]  @relation("ManagerNotes")
+  createdOrgGoals  OrgGoal[]
+}
+
+model OrgGoal {
+  id           String       @id @default(uuid())
+  level        OrgGoalLevel
+  title        String
+  description  String
+  department   String?      // 部署目標の場合に使用
+  periodKey    String?      // "2026-H1" など（MISSIONはnull）
+  parentId     String?
+  parent       OrgGoal?     @relation("OrgGoalHierarchy", fields: [parentId], references: [id])
+  children     OrgGoal[]    @relation("OrgGoalHierarchy")
+  createdById  String
+  createdBy    User         @relation(fields: [createdById], references: [id])
+  goals        Goal[]       // この組織目標に紐づく個人目標
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 }
 
 model Evaluation {
@@ -57,28 +84,30 @@ model Evaluation {
   employee         User       @relation("EmployeeEvals", fields: [employeeId], references: [id])
   evaluatorId      String
   evaluator        User       @relation("EvaluatorEvals", fields: [evaluatorId], references: [id])
-  periodKey        String     // "2026-H1"
+  periodKey        String
   status           EvalStatus @default(DRAFT)
-  achievementScore Float      @default(0.0) // 業績(MBO)
-  sentimentScore   Float      @default(0.0) // 情意・安全貢献
-  competencyScore  Float      @default(0.0) // 能力・技能
+  achievementScore Float      @default(0.0)
+  sentimentScore   Float      @default(0.0)
+  competencyScore  Float      @default(0.0)
   totalScore       Float      @default(0.0)
-  finalGrade       String?    // S, A, B, C, D
-  aiSummaryText    String?    // Geminiが生成した総合評価文
+  finalGrade       String?
+  aiSummaryText    String?
   updatedAt        DateTime   @updatedAt
 }
 
 model Goal {
-  id               String   @id @default(uuid())
+  id               String    @id @default(uuid())
   userId           String
-  user             User     @relation(fields: [userId], references: [id])
+  user             User      @relation(fields: [userId], references: [id])
   periodKey        String
   title            String
   targetValue      Float
-  currentValue     Float    @default(0.0)
-  unit             String   // "件", "%", "回"など
-  isAchieved       Boolean  @default(false)
-  createdAt        DateTime @default(now())
+  currentValue     Float     @default(0.0)
+  unit             String
+  isAchieved       Boolean   @default(false)
+  parentOrgGoalId  String?                    // 上位の組織目標と連携
+  parentOrgGoal    OrgGoal?  @relation(fields: [parentOrgGoalId], references: [id])
+  createdAt        DateTime  @default(now())
 }
 
 model PeerBonus {
@@ -88,30 +117,30 @@ model PeerBonus {
   receiverId       String
   receiver         User     @relation("BonusReceiver", fields: [receiverId], references: [id])
   points           Int      @default(5)
-  tag              String   // "#チームワーク", "#迅速な対応"
+  tag              String
   message          String
   createdAt        DateTime @default(now())
 }
 
 model IncidentReport {
-  id               String       @id @default(uuid())
-  reporterId       String
-  reporter         User         @relation(fields: [reporterId], references: [id])
-  type             IncidentType
-  description      String
-  preventionIdea   String?      // 改善策の提案
-  aiEvaluatedPoints Int         @default(0) // Geminiが判定した加点ポイント
-  createdAt        DateTime     @default(now())
+  id                String       @id @default(uuid())
+  reporterId        String
+  reporter          User         @relation(fields: [reporterId], references: [id])
+  type              IncidentType
+  description       String
+  preventionIdea    String?
+  aiEvaluatedPoints Int          @default(0)
+  createdAt         DateTime     @default(now())
 }
 
 model HealthLog {
   id               String   @id @default(uuid())
   userId           String
   user             User     @relation(fields: [userId], references: [id])
-  activityType     String   // "WALKING", "VOLUNTEER", "HOBBY"
-  value            Int      // 歩数や活動回数
+  activityType     String
+  value            Int
   earnedPoints     Int      @default(0)
-  proofUrl         String?  // 写真等のエビデンスURL
+  proofUrl         String?
   loggedAt         DateTime @default(now())
 }
 
@@ -120,8 +149,12 @@ model OneOnOneNote {
   employeeId       String
   employee         User     @relation("EmployeeNotes", fields: [employeeId], references: [id])
   managerId        String
+  manager          User     @relation("ManagerNotes", fields: [managerId], references: [id])
   content          String
-  aiActionItems    String?  // Geminiが抽出した次回の宿題・目標
+  aiActionItems    String?
   meetingDate      DateTime
+  employeePoints   Int      @default(5)  // 受講者へのポイント
+  managerPoints    Int      @default(3)  // 実施者へのポイント
+  pointsGranted    Boolean  @default(false) // ポイント付与済みフラグ（二重付与防止）
   createdAt        DateTime @default(now())
 }
