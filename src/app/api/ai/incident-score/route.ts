@@ -16,16 +16,20 @@ export async function POST(req: Request) {
     const aiResult = await scoreIncidentReport(description, preventionIdea || '')
 
     // 2. 本来はここでDB(Prisma)にIncidentReportモデルとして保存する処理を実装
-    // DBへの挿入処理 (ユーザー情報はモック)
-    await prisma.incidentReport.create({
-      data: {
-        reporterId: 'demo-user-id',
-        type: 'NEAR_MISS',
-        description,
-        preventionIdea,
-        aiEvaluatedPoints: aiResult.points
-      }
-    })
+    // DBへの挿入処理 (失敗してもAI結果は返すように try-catch)
+    try {
+      await prisma.incidentReport.create({
+        data: {
+          reporterId: 'demo-user-id',
+          type: 'NEAR_MISS',
+          description,
+          preventionIdea,
+          aiEvaluatedPoints: aiResult.points
+        }
+      })
+    } catch (dbError) {
+      console.warn('Incident report save skipped (DB unavailable):', dbError)
+    }
 
     // 3. 結果をフロントエンドへ返す
     return NextResponse.json({

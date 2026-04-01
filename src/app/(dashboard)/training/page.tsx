@@ -7,16 +7,18 @@ import { Card, CardContent } from '@/components/ui/card'
 import { PlusCircle, Loader2, BookOpen, Award } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { clsx } from 'clsx'
 
 type TrainingRecord = {
   id: string
   title: string
-  type: 'OJT' | 'OFF_JT'
+  type: 'OJT' | 'OFF_JT' | 'BOOK'
   date: string
   hours: number
   reportContent: string | null
   earnedPoints: number
   pointsGranted: boolean
+  imageUrl?: string | null
 }
 
 export default function TrainingPage() {
@@ -27,10 +29,12 @@ export default function TrainingPage() {
 
   // Form states
   const [title, setTitle] = useState('')
-  const [type, setType] = useState<'OJT' | 'OFF_JT'>('OJT')
+  const [type, setType] = useState<'OJT' | 'OFF_JT' | 'BOOK'>('OJT')
   const [date, setDate] = useState('')
   const [hours, setHours] = useState('1')
   const [reportContent, setReportContent] = useState('')
+  const [image, setImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -54,11 +58,25 @@ export default function TrainingPage() {
     fetchUserAndRecords()
   }, [])
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setImage(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
     try {
+      // 本来はFormDataを使用して画像をアップロードしますが、
+      // デモ用にbase64または擬似的なパスで対応します
       const res = await fetch('/api/training', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -68,7 +86,8 @@ export default function TrainingPage() {
           type,
           date,
           hours,
-          reportContent
+          reportContent,
+          imageUrl: imagePreview // デモ用
         })
       })
 
@@ -80,6 +99,8 @@ export default function TrainingPage() {
         setReportContent('')
         setDate('')
         setHours('1')
+        setImage(null)
+        setImagePreview(null)
       } else {
         alert('エラーが発生しました')
       }
@@ -122,14 +143,16 @@ export default function TrainingPage() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">研修のタイトル</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {type === 'BOOK' ? '本のタイトル' : '研修のタイトル'}
+                </label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  placeholder="例: 高齢者虐待防止研修"
+                  placeholder={type === 'BOOK' ? "例: 介護の心理学エッセンス" : "例: 高齢者虐待防止研修"}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -137,15 +160,18 @@ export default function TrainingPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">種別</label>
                   <select
                     value={type}
-                    onChange={(e) => setType(e.target.value as 'OJT' | 'OFF_JT')}
+                    onChange={(e) => setType(e.target.value as 'OJT' | 'OFF_JT' | 'BOOK')}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     <option value="OJT">OJT (内部研修・5pt)</option>
                     <option value="OFF_JT">Off-JT (外部研修・10pt)</option>
+                    <option value="BOOK">読書記録 (Off-JT・10pt)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">参加日</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {type === 'BOOK' ? '読了日' : '参加日'}
+                  </label>
                   <input
                     type="date"
                     required
@@ -156,23 +182,59 @@ export default function TrainingPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">研修時間 (h)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {type === 'BOOK' ? '読書日数 (d)' : '研修時間 (h)'}
+                </label>
                 <input
                   type="number"
-                  step="0.5"
+                  step={type === 'BOOK' ? "1" : "0.5"}
                   required
                   value={hours}
                   onChange={(e) => setHours(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
+              {type === 'BOOK' && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">表紙を撮影・アップロード</label>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('book-image')?.click()}
+                      className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      {imagePreview ? (
+                        <img src={imagePreview} className="w-full h-full object-cover rounded-lg" alt="Preview" />
+                      ) : (
+                        <>
+                          <PlusCircle className="w-6 h-6 text-gray-300" />
+                          <span className="text-[10px] text-gray-400 mt-1">写真を撮る</span>
+                        </>
+                      )}
+                    </button>
+                    <input
+                      id="book-image"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={handleImageChange}
+                    />
+                    {imagePreview && (
+                      <p className="text-[10px] text-emerald-600 font-bold">✓ 選択済み</p>
+                    )}
+                  </div>
+                </div>
+              )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">学び・感想など</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {type === 'BOOK' ? '書籍の内容と自分の意見' : '学び・感想など'}
+                </label>
                 <textarea
                   value={reportContent}
                   onChange={(e) => setReportContent(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 h-24 resize-none"
-                  placeholder="研修で学んだことや今後の業務にどう活かすかを記入"
+                  placeholder={type === 'BOOK' ? "本から学んだこと、現場でどう役立てるかを記入" : "研修で学んだことや今後の業務にどう活かすかを記入"}
                 />
               </div>
               <div className="pt-2">
@@ -207,14 +269,19 @@ export default function TrainingPage() {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${r.type === 'OJT' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
-                            {r.type === 'OJT' ? '内部 OJT' : '外部 Off-JT'}
+                          <span className={clsx(
+                            "px-2 py-0.5 rounded text-xs font-bold",
+                            r.type === 'OJT' && "bg-blue-100 text-blue-700",
+                            r.type === 'OFF_JT' && "bg-orange-100 text-orange-700",
+                            r.type === 'BOOK' && "bg-emerald-100 text-emerald-700"
+                          )}>
+                            {r.type === 'OJT' ? '内部 OJT' : r.type === 'OFF_JT' ? '外部 Off-JT' : '読書 Off-JT'}
                           </span>
                           <span className="text-xs text-gray-500">
                             {new Date(r.date).toLocaleDateString('ja-JP')}
                           </span>
                           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                            {r.hours}時間
+                            {r.hours}{r.type === 'BOOK' ? '日間' : '時間'}
                           </span>
                         </div>
                         <h3 className="text-lg font-bold text-gray-800">{r.title}</h3>
@@ -224,11 +291,18 @@ export default function TrainingPage() {
                         <span className="text-sm font-black text-primary">+{r.earnedPoints} pt</span>
                       </div>
                     </div>
-                    {r.reportContent && (
-                      <p className="text-sm text-gray-600 mt-3 line-clamp-2 bg-gray-50 p-3 rounded-lg">
-                        {r.reportContent}
-                      </p>
-                    )}
+                    <div className="flex gap-4 mt-3">
+                      {r.imageUrl && (
+                        <div className="shrink-0 w-16 h-20 rounded-md overflow-hidden border border-gray-100 shadow-sm">
+                          <img src={r.imageUrl} className="w-full h-full object-cover" alt="Cover" />
+                        </div>
+                      )}
+                      {r.reportContent && (
+                        <p className="text-sm text-gray-600 line-clamp-3 bg-gray-50 p-3 rounded-lg flex-1">
+                          {r.reportContent}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>

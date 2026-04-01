@@ -14,6 +14,8 @@ import { IncidentType } from '@prisma/client'
 type ScoreResult = {
   points: number
   feedback: string
+  riskCategory?: string
+  analysis?: string
 }
 
 export default function IncidentForm() {
@@ -97,11 +99,35 @@ export default function IncidentForm() {
               </div>
               
               <h3 className="text-lg font-bold text-gray-800 tracking-tight">報告を受理しました！</h3>
-              <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm leading-relaxed border border-blue-100 max-w-md shadow-sm relative">
-                <span className="absolute -top-3 left-4 bg-blue-100 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">
-                  AI フィードバック
-                </span>
-                {result.feedback}
+              
+              <div className="flex flex-col gap-3 w-full max-w-sm">
+                {result.riskCategory && (
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Risk Category:</span>
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-none px-3 py-1 font-black">
+                      {result.riskCategory}
+                    </Badge>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm leading-relaxed border border-blue-100 shadow-sm relative">
+                  <span className="absolute -top-3 left-4 bg-blue-100 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">
+                    AI フィードバック
+                  </span>
+                  <div className="flex gap-2">
+                    <Sparkles className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                    <p className="font-medium">{result.feedback}</p>
+                  </div>
+                </div>
+
+                {result.analysis && (
+                  <div className="bg-gray-50 text-gray-700 p-5 rounded-2xl text-[13px] leading-relaxed border border-gray-100 shadow-inner text-left mt-2">
+                    <p className="font-bold text-gray-500 mb-2 border-b border-gray-200 pb-1 flex items-center gap-1.5 uppercase tracking-tighter text-[11px]">
+                      <ShieldAlert className="w-3.5 h-3.5" /> AI Risk Analysis Report
+                    </p>
+                    {result.analysis}
+                  </div>
+                )}
               </div>
 
               <Button 

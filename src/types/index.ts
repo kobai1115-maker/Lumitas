@@ -47,4 +47,6 @@ export type GeminiEvalResult = {
 export type GeminiIncidentScoreResult = {
   points: number
   feedback: string
+  riskCategory?: string // 例: 転倒・転落, 誤薬, 不穏, 異食など
+  analysis?: string // AIによる詳細なリスク分析
 }
