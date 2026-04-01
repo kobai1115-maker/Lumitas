@@ -61,7 +61,7 @@ export default function LoginPage() {
           <div className="bg-primary/10 p-4 rounded-full mb-4">
             <Leaf className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">CareGrow AI</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">ルミタス (Lumitas)</h1>
           <p className="text-sm font-medium text-gray-500 mt-2">社会福祉法人向け 人事考課システム</p>
         </div>
 

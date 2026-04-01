@@ -59,7 +59,7 @@ export default function DashboardLayout({
       {/* 画面上部ヘッダー (モバイル用) */}
       <header className="sticky top-0 z-30 flex items-center justify-between bg-white border-b px-4 py-3 shadow-sm h-14">
         <div className="flex items-center gap-2 text-primary font-bold text-lg tracking-tight">
-          <ALargeSmall className="w-5 h-5" /> CareGrow AI
+          <ALargeSmall className="w-5 h-5" /> ルミタス (Lumitas)
         </div>
         <button
           onClick={handleLogout}
