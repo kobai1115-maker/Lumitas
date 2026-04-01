@@ -52,7 +52,7 @@ export default function ProgressOverview({ scoreData }: Props) {
       <div className="grid grid-cols-3 gap-3">
         {/* 業績 (Achievement) */}
         <Dialog>
-          <DialogTrigger render={
+          <DialogTrigger nativeButton={false} render={
             <Card className="shadow-sm hover:border-blue-300 hover:bg-blue-50/10 cursor-pointer transition-all active:scale-95 group">
               <CardHeader className="p-3 pb-1">
                 <CardTitle className="text-xs font-semibold text-gray-500 flex items-center gap-1 group-hover:text-blue-600 transition-colors">
@@ -95,7 +95,7 @@ export default function ProgressOverview({ scoreData }: Props) {
 
         {/* 能力 (Competency) */}
         <Dialog>
-          <DialogTrigger render={
+          <DialogTrigger nativeButton={false} render={
             <Card className="shadow-sm hover:border-emerald-300 hover:bg-emerald-50/10 cursor-pointer transition-all active:scale-95 group">
               <CardHeader className="p-3 pb-1">
                 <CardTitle className="text-xs font-semibold text-gray-500 flex items-center gap-1 group-hover:text-emerald-600 transition-colors">
@@ -138,7 +138,7 @@ export default function ProgressOverview({ scoreData }: Props) {
 
         {/* 情意 (Sentiment) */}
         <Dialog>
-          <DialogTrigger render={
+          <DialogTrigger nativeButton={false} render={
             <Card className="shadow-sm hover:border-orange-300 hover:bg-orange-50/10 cursor-pointer transition-all active:scale-95 group">
               <CardHeader className="p-3 pb-1">
                 <CardTitle className="text-xs font-semibold text-gray-500 flex items-center gap-1 group-hover:text-orange-600 transition-colors">
