@@ -37,7 +37,7 @@ export default function DashboardLayout({
   const navItems = [
     { name: 'ホーム',       href: '/',           icon: Home },
     { name: '目標',         href: '/goals',       icon: Target },
-    { name: '評価',         href: '/evaluation',  icon: Mic },
+    { name: 'AI評価',       href: '/evaluation',  icon: Mic },
     { name: 'ピアボーナス', href: '/peer-bonus',  icon: Award },
     { name: 'インシデント', href: '/incident',    icon: CheckSquare },
   ]
@@ -51,7 +51,7 @@ export default function DashboardLayout({
   ]
 
   if (!isReady) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+    return null // 画面のチラつきとHydrationエラーを防ぐため、準備ができるまで何も出さない
   }
 
   return (
@@ -119,7 +119,7 @@ export default function DashboardLayout({
                   <span className="absolute top-0 w-8 md:w-16 h-1 bg-primary rounded-b-md" />
                 )}
                 <Icon className={clsx("w-6 h-6", isActive ? "stroke-[2.5px]" : "stroke-2")} />
-                <span className="text-[11px] md:text-sm font-bold tracking-tighter whitespace-nowrap">{item.name}</span>
+                <span className="text-[10px] md:text-xs font-bold leading-none">{item.name}</span>
               </Link>
             )
           })}
