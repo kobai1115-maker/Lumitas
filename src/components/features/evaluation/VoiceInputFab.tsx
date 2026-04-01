@@ -54,7 +54,7 @@ export default function VoiceInputFab() {
   return (
     <>
       {/* 画面下部中央にフローティングするマイクボタン */}
-      <div className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center">
+      <div className="fixed bottom-24 md:bottom-24 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center">
         
         <AnimatePresence>
           {isRecording && (

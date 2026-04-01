@@ -30,6 +30,11 @@ enum IncidentType {
   IMPROVEMENT_IDEA
 }
 
+enum TrainingType {
+  OJT
+  OFF_JT
+}
+
 enum OrgGoalLevel {
   MISSION      // 法人理念（恒久的）
   CORPORATE    // 法人目標（年度）
@@ -56,6 +61,7 @@ model User {
   incidents        IncidentReport[]
   goals            Goal[]
   healthLogs       HealthLog[]
+  trainingRecords  TrainingRecord[]
   oneOnOneNotes    OneOnOneNote[]   @relation("EmployeeNotes")
   conductedMeetings OneOnOneNote[]  @relation("ManagerNotes")
   createdOrgGoals  OrgGoal[]
@@ -157,4 +163,18 @@ model OneOnOneNote {
   managerPoints    Int      @default(3)  // 実施者へのポイント
   pointsGranted    Boolean  @default(false) // ポイント付与済みフラグ（二重付与防止）
   createdAt        DateTime @default(now())
+}
+
+model TrainingRecord {
+  id               String       @id @default(uuid())
+  userId           String
+  user             User         @relation(fields: [userId], references: [id])
+  title            String
+  type             TrainingType
+  date             DateTime
+  hours            Float
+  reportContent    String?
+  earnedPoints     Int          @default(5)
+  pointsGranted    Boolean      @default(false)
+  createdAt        DateTime     @default(now())
 }

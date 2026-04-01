@@ -1,8 +1,11 @@
 import { GoogleGenAI } from '@google/genai'
 import { GeminiEvalResult, GeminiIncidentScoreResult } from '@/types'
 
-// SDKインスタンス化。NEXT_PUBLICではなく、サーバーサイド環境変数から取得
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' })
+// SDKインスタンス取得関数。NEXT_PUBLICではなく、サーバーサイド環境変数から取得
+function getGeminiClient() {
+  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' })
+}
+
 const MODEL_NAME = 'gemini-3.1-flash' // デフォルトモデル
 
 /**
@@ -25,6 +28,7 @@ export async function convertVoiceToEvaluation(userInputText: string): Promise<G
 `
 
   try {
+    const ai = getGeminiClient()
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: [
@@ -71,6 +75,7 @@ export async function scoreIncidentReport(description: string, preventionIdea: s
 `
 
   try {
+    const ai = getGeminiClient()
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: [

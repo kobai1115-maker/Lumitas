@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Home, Target, Award, ALargeSmall, Mic, LogOut, CheckSquare, MessageSquare, Building2, Users } from 'lucide-react'
+import { Home, Target, Award, ALargeSmall, Mic, LogOut, CheckSquare, MessageSquare, Building2, Users, BookOpen } from 'lucide-react'
 import { clsx } from 'clsx'
 import { supabase } from '@/lib/supabase'
 
@@ -45,6 +45,7 @@ export default function DashboardLayout({
   // その他メニュー（サブナビ）
   const subNavItems = [
     { name: '1on1面談', href: '/one-on-one',  icon: MessageSquare },
+    { name: '研修記録', href: '/training',    icon: BookOpen },
     { name: '組織目標', href: '/org-goals',   icon: Building2 },
     { name: 'スタッフ管理', href: '/admin/staff', icon: Users },
   ]
@@ -118,7 +119,7 @@ export default function DashboardLayout({
                   <span className="absolute top-0 w-8 md:w-16 h-1 bg-primary rounded-b-md" />
                 )}
                 <Icon className={clsx("w-6 h-6", isActive ? "stroke-[2.5px]" : "stroke-2")} />
-                <span className="text-[10px] md:text-xs font-medium leading-none">{item.name}</span>
+                <span className="text-[11px] md:text-sm font-bold tracking-tighter whitespace-nowrap">{item.name}</span>
               </Link>
             )
           })}

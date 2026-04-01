@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { createClient } from '@supabase/supabase-js'
 
-// Supabase Admin クライアント（サーバーサイド専用）
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
+// Supabase Admin クライアント取得関数（サーバーサイド専用）
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder_key'
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
+}
 
 // スタッフ一覧取得
 export async function GET() {
@@ -44,6 +44,7 @@ export async function POST(req: Request) {
     }
 
     // 1. Supabase Auth にユーザーを作成
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -96,6 +97,7 @@ export async function PATCH(req: Request) {
     })
 
     // アカウント無効化の場合はSupabase Auth側でもBANする
+    const supabaseAdmin = getSupabaseAdmin()
     if (isActive === false) {
       await supabaseAdmin.auth.admin.updateUserById(id, { ban_duration: '87600h' })
     } else if (isActive === true) {
