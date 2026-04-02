@@ -20,6 +20,7 @@ export async function POST(req: Request) {
     try {
       await prisma.incidentReport.create({
         data: {
+          corporationId: 'corp-001',
           reporterId: 'demo-user-id',
           type: 'NEAR_MISS',
           description,

@@ -36,6 +36,7 @@ export async function POST(req: Request) {
     // 1. 研修記録を作成
     const record = await prisma.trainingRecord.create({
       data: {
+        corporationId: 'corp-001',
         userId,
         title,
         type,

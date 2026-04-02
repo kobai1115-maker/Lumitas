@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "pages:build": "npx @cloudflare/next-on-pages",
+    "pages:build": "prisma generate && npx @cloudflare/next-on-pages",
     "preview": "npm run pages:build && wrangler pages dev .vercel/output --compatibility-date=2024-04-01 --compatibility-flag=nodejs_compat",
     "deploy": "npm run pages:build && wrangler pages deploy .vercel/output"
   },
