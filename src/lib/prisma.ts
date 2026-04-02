@@ -5,9 +5,9 @@ let prisma: PrismaClient
 if (process.env.NEXT_RUNTIME === 'edge') {
   prisma = new PrismaClient()
 } else {
-  // nodejs サーバーサイドでの初期化
-  const { Pool } = require('pg')
-  const { PrismaPg } = require('@prisma/adapter-pg')
+  // nodejs サーバーサイドでの初期化 - eval('require') を使い webpack の深追いを防ぎます
+  const { Pool } = eval('require')('pg')
+  const { PrismaPg } = eval('require')('@prisma/adapter-pg')
   
   const prismaClientSingleton = () => {
     if (process.env.DATABASE_URL?.includes('supabase') || process.env.NODE_ENV === 'production') {

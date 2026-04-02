@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
       stream: false,
       dns: false,
     };
+    // さらに強力な別名（alias）設定で webpack を「納得」させます
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "fs": false,
+      "path": false,
+      "stream": false,
+      "net": false,
+      "tls": false,
+    };
     return config;
   },
 };
