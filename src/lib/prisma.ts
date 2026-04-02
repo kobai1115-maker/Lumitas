@@ -1,26 +1,17 @@
-import { PrismaClient } from '@prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
+import { PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-/**
- * Moyuukai Lumitas - Database Client Configuration
- * Cloudflare Pages の nodejs_compat モードを活用し、標準的な Node.js ドライバで Supabase に接続します。
- */
-const prismaClientSingleton = () => {
-  // Supabase Connection Pooler を使用するための設定
-  const pool = new Pool({ 
-    connectionString: process.env.DATABASE_URL,
-    max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-  })
-  const adapter = new PrismaPg(pool)
-  return new PrismaClient({ adapter })
-}
+// Edge環境では都度接続が発生するため、グローバルにインスタンスをキャッシュします
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
-const g = globalThis as any
-const prisma = g.prismaGlobal ?? prismaClientSingleton()
+// アダプターを使用してコネクションプールを作成
+const connectionString = `${process.env.DATABASE_URL}`;
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
 
-export default prisma
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({ adapter });
 
-if (process.env.NODE_ENV !== 'production') g.prismaGlobal = prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
