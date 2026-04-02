@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
+export const runtime = 'edge'
+
 // 組織目標一覧取得（階層構造で返す）
 export async function GET(req: Request) {
   try {
@@ -60,6 +62,7 @@ export async function POST(req: Request) {
 
     const newGoal = await prisma.orgGoal.create({
       data: {
+        corporationId: 'corp-001',
         level,
         title,
         description,

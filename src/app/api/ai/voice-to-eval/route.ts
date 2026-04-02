@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { convertVoiceToEvaluation } from '@/lib/gemini'
 import prisma from '@/lib/prisma'
 
+export const runtime = 'edge'
 export const maxDuration = 60 // Cloudflare Pages Edge Runtime / Next.js用のタイムアウト設定
 
 export async function POST(req: Request) {
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
     // 本来はここでDBに保存する処理を入れるなど
     await prisma.evaluation.create({
       data: {
+        corporationId: 'corp-001',
         employeeId: 'demo-user-id',
         evaluatorId: 'demo-user-id', 
         periodKey: '2026-H1',

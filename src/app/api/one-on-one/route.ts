@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
+export const runtime = 'edge'
+
 // 1on1面談記録の取得
 export async function GET(req: Request) {
   try {
@@ -36,6 +38,7 @@ export async function POST(req: Request) {
     // 1. 面談記録を保存
     const note = await prisma.oneOnOneNote.create({
       data: {
+        corporationId: 'corp-001',
         employeeId,
         managerId,
         content,

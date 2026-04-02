@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
+export const runtime = 'edge'
+
 // 研修参加記録の取得
 export async function GET(req: Request) {
   try {

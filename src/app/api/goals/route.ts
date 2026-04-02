@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
+export const runtime = 'edge'
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
@@ -22,6 +24,7 @@ export async function POST(req: Request) {
     const body = await req.json()
     const newGoal = await prisma.goal.create({
       data: {
+        corporationId: 'corp-001',
         userId: body.userId || 'demo-user-id',
         title: body.title,
         targetValue: body.targetValue,

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { scoreIncidentReport } from '@/lib/gemini'
 import prisma from '@/lib/prisma'
 
+export const runtime = 'edge'
 export const maxDuration = 60 // Cloudflare Pages Edge Runtime / Next.js用のタイムアウト設定
 
 export async function POST(req: Request) {

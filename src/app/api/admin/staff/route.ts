@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+
+export const runtime = 'edge'
 import { createClient } from '@supabase/supabase-js'
 
 // Supabase Admin クライアント取得関数（サーバーサイド専用）

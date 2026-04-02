@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
+export const runtime = 'edge'
+
 export async function GET() {
   try {
     const bonuses = await prisma.peerBonus.findMany({
@@ -45,6 +47,7 @@ export async function POST(req: Request) {
     
     const newBonus = await prisma.peerBonus.create({
       data: {
+        corporationId: 'corp-001',
         senderId: 'demo-sender-id', // セッションから取得想定
         receiverId,
         points: points || 5,
