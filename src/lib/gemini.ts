@@ -37,9 +37,12 @@ export async function convertVoiceToEvaluation(userInputText: string): Promise<G
 返却形式：{"structuredText": "...", "category": "..."}
 `
   try {
-    const ai = getGeminiClient().getGenerativeModel({ model: MODEL_NAME })
-    const result = await ai.generateContent([systemPrompt, `ユーザー入力: ${userInputText}`])
-    const rawText = result.response.text()
+    const ai = getGeminiClient()
+    const result = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: `${systemPrompt}\nユーザー入力: ${userInputText}`
+    })
+    const rawText = result.text || ''
     const jsonString = rawText.replace(/```json\n?|```\n?/g, '').trim()
     return JSON.parse(jsonString) as GeminiEvalResult
   } catch (error) {
@@ -101,9 +104,12 @@ export async function scoreIncidentReport(description: string, preventionIdea: s
 }
 `
   try {
-    const ai = getGeminiClient().getGenerativeModel({ model: MODEL_NAME })
-    const result = await ai.generateContent([systemPrompt, `報告: ${description}\n対策: ${preventionIdea}`])
-    const rawText = result.response.text()
+    const ai = getGeminiClient()
+    const result = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: `${systemPrompt}\n報告: ${description}\n対策: ${preventionIdea}`
+    })
+    const rawText = result.text || ''
     const jsonString = rawText.replace(/```json\n?|```\n?/g, '').trim()
     return JSON.parse(jsonString) as GeminiIncidentScoreResult
   } catch (error) {

@@ -1,44 +1,23 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
-enum Role {
-  ADMIN
-  MANAGER
-  STAFF_CAREGIVER
-  STAFF_NURSE
-  STAFF_SOCIAL_WORKER
-  STAFF_OFFICE
-  STAFF_NUTRITIONIST
-}
+model Corporation {
+  id           String   @id @default(uuid())
+  name         String
+  subdomain    String?  @unique
+  subscription String   @default("FREE")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-enum EvalStatus {
-  DRAFT
-  SELF_SUBMITTED
-  MANAGER_REVIEWED
-  FINALIZED
-}
-
-enum IncidentType {
-  NEAR_MISS
-  ACCIDENT
-  IMPROVEMENT_IDEA
-}
-
-enum TrainingType {
-  OJT
-  OFF_JT
-}
-
-enum OrgGoalLevel {
-  MISSION      // 法人理念（恒久的）
-  CORPORATE    // 法人目標（年度）
-  DEPARTMENT   // 部署目標（年度・部署別）
+  users        User[]
+  orgGoals     OrgGoal[]
 }
 
 model User {
@@ -46,12 +25,19 @@ model User {
   staffId          String           @unique
   email            String           @unique
   fullName         String
-  role             Role
+  role             String           // ADMIN, MANAGER, STAFF_CAREGIVER 等
   gradeLevel       Int              @default(1)
   department       String
+  birthday         DateTime?
+  yearsOfService   Int              @default(0)
+  experienceYears  Int              @default(0)
   welfarePoints    Int              @default(0)
-  isActive         Boolean          @default(true)  // アカウント有効フラグ
-  mustChangePassword Boolean        @default(true)  // 初回ログイン時パスワード変更フラグ
+  isActive         Boolean          @default(true)
+  mustChangePassword Boolean        @default(true)
+  
+  corporationId    String
+  corporation      Corporation      @relation(fields: [corporationId], references: [id])
+
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -66,33 +52,40 @@ model User {
   oneOnOneNotes    OneOnOneNote[]   @relation("EmployeeNotes")
   conductedMeetings OneOnOneNote[]  @relation("ManagerNotes")
   createdOrgGoals  OrgGoal[]
+
+  @@index([corporationId])
 }
 
 model OrgGoal {
   id           String       @id @default(uuid())
-  level        OrgGoalLevel
+  corporationId String
+  corporation   Corporation  @relation(fields: [corporationId], references: [id])
+  level        String       // MISSION, CORPORATE, DEPARTMENT
   title        String
   description  String
-  department   String?      // 部署目標の場合に使用
-  periodKey    String?      // "2026-H1" など（MISSIONはnull）
+  department   String?      
+  periodKey    String?      
   parentId     String?
   parent       OrgGoal?     @relation("OrgGoalHierarchy", fields: [parentId], references: [id])
   children     OrgGoal[]    @relation("OrgGoalHierarchy")
   createdById  String
   createdBy    User         @relation(fields: [createdById], references: [id])
-  goals        Goal[]       // この組織目標に紐づく個人目標
+  goals        Goal[]       
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+
+  @@index([corporationId])
 }
 
 model Evaluation {
   id               String     @id @default(uuid())
+  corporationId    String
   employeeId       String
   employee         User       @relation("EmployeeEvals", fields: [employeeId], references: [id])
   evaluatorId      String
   evaluator        User       @relation("EvaluatorEvals", fields: [evaluatorId], references: [id])
   periodKey        String
-  status           EvalStatus @default(DRAFT)
+  status           String     @default("DRAFT") // DRAFT, SELF_SUBMITTED 等
   achievementScore Float      @default(0.0)
   sentimentScore   Float      @default(0.0)
   competencyScore  Float      @default(0.0)
@@ -100,10 +93,14 @@ model Evaluation {
   finalGrade       String?
   aiSummaryText    String?
   updatedAt        DateTime   @updatedAt
+
+  @@index([corporationId])
+  @@index([employeeId])
 }
 
 model Goal {
   id               String    @id @default(uuid())
+  corporationId    String
   userId           String
   user             User      @relation(fields: [userId], references: [id])
   periodKey        String
@@ -112,13 +109,16 @@ model Goal {
   currentValue     Float     @default(0.0)
   unit             String
   isAchieved       Boolean   @default(false)
-  parentOrgGoalId  String?                    // 上位の組織目標と連携
+  parentOrgGoalId  String?                    
   parentOrgGoal    OrgGoal?  @relation(fields: [parentOrgGoalId], references: [id])
   createdAt        DateTime  @default(now())
+
+  @@index([corporationId])
 }
 
 model PeerBonus {
   id               String   @id @default(uuid())
+  corporationId    String
   senderId         String
   sender           User     @relation("BonusSender", fields: [senderId], references: [id])
   receiverId       String
@@ -127,21 +127,27 @@ model PeerBonus {
   tag              String
   message          String
   createdAt        DateTime @default(now())
+
+  @@index([corporationId])
 }
 
 model IncidentReport {
   id                String       @id @default(uuid())
+  corporationId     String
   reporterId        String
   reporter          User         @relation(fields: [reporterId], references: [id])
-  type              IncidentType
+  type              String       // NEAR_MISS, ACCIDENT, IMPROVEMENT_IDEA
   description       String
   preventionIdea    String?
   aiEvaluatedPoints Int          @default(0)
   createdAt         DateTime     @default(now())
+
+  @@index([corporationId])
 }
 
 model HealthLog {
   id               String   @id @default(uuid())
+  corporationId    String
   userId           String
   user             User     @relation(fields: [userId], references: [id])
   activityType     String
@@ -149,10 +155,13 @@ model HealthLog {
   earnedPoints     Int      @default(0)
   proofUrl         String?
   loggedAt         DateTime @default(now())
+
+  @@index([corporationId])
 }
 
 model OneOnOneNote {
   id               String   @id @default(uuid())
+  corporationId    String
   employeeId       String
   employee         User     @relation("EmployeeNotes", fields: [employeeId], references: [id])
   managerId        String
@@ -160,22 +169,29 @@ model OneOnOneNote {
   content          String
   aiActionItems    String?
   meetingDate      DateTime
-  employeePoints   Int      @default(5)  // 受講者へのポイント
-  managerPoints    Int      @default(3)  // 実施者へのポイント
-  pointsGranted    Boolean  @default(false) // ポイント付与済みフラグ（二重付与防止）
+  employeePoints   Int      @default(5)  
+  managerPoints    Int      @default(3)  
+  pointsGranted    Boolean  @default(false) 
   createdAt        DateTime @default(now())
+
+  @@index([corporationId])
 }
 
 model TrainingRecord {
   id               String       @id @default(uuid())
+  corporationId    String
   userId           String
   user             User         @relation(fields: [userId], references: [id])
   title            String
-  type             TrainingType
+  type             String       // OJT, OFF_JT, BOOK
   date             DateTime
   hours            Float
   reportContent    String?
   earnedPoints     Int          @default(5)
   pointsGranted    Boolean      @default(false)
+  imageUrl         String?      
   createdAt        DateTime     @default(now())
+
+  @@index([corporationId])
 }
+

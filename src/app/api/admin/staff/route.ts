@@ -9,10 +9,11 @@ function getSupabaseAdmin() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
 }
 
-// スタッフ一覧取得
+// 1. スタッフ一覧取得 (法人IDでフィルタリング)
 export async function GET() {
   try {
     const staff = await prisma.user.findMany({
+      where: { corporationId: 'corp-001' }, // 暫定的に萌佑会のID固定
       orderBy: [{ department: 'asc' }, { fullName: 'asc' }],
       select: {
         id: true,
@@ -22,6 +23,9 @@ export async function GET() {
         role: true,
         gradeLevel: true,
         department: true,
+        birthday: true,
+        yearsOfService: true,
+        experienceYears: true,
         welfarePoints: true,
         isActive: true,
         mustChangePassword: true,
@@ -31,87 +35,74 @@ export async function GET() {
     return NextResponse.json(staff)
   } catch (error) {
     console.error('GET /api/admin/staff error:', error)
-    return NextResponse.json({ error: 'スタッフ情報の取得に失敗しました' }, { status: 500 })
+    return NextResponse.json({ error: '取得に失敗しました' }, { status: 500 })
   }
 }
 
-// スタッフ新規作成（ADMIN専用）
+// 2. スタッフ新規作成
 export async function POST(req: Request) {
   try {
-    const { staffId, email, password, fullName, role, gradeLevel, department } = await req.json()
+    const { 
+      staffId, 
+      email, 
+      fullName, 
+      role, 
+      gradeLevel, 
+      department,
+      birthday,
+      yearsOfService,
+      experienceYears
+    } = await req.json()
+    
+    // 法人IDはログインセッション等から取るべきだが、現在は萌佑会固定
+    const corporationId = 'corp-001'
 
-    if (!staffId || !password || !fullName || !role || !department) {
-      return NextResponse.json({ error: '必須項目が不足しています（職員ID、パスワード、氏名、職位、部署は必須です）' }, { status: 400 })
-    }
-
-    // メールアドレスが未指定なら、職員IDから自動生成
-    const finalEmail = email || `${staffId}@lumitas.local`
-
-    // 1. Supabase Auth にユーザーを作成
-    const supabaseAdmin = getSupabaseAdmin()
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: finalEmail,
-      password,
-      email_confirm: true, // メール確認不要で即時有効化
-    })
-
-    if (authError || !authData.user) {
-      return NextResponse.json({ error: authError?.message || '認証ユーザーの作成に失敗しました' }, { status: 500 })
-    }
-
-    // 2. Prisma の User テーブルにプロフィール情報を保存
     const newUser = await prisma.user.create({
       data: {
-        id: authData.user.id,
         staffId,
-        email: finalEmail,
+        email: email || `${staffId}@moyuukai.local`,
         fullName,
         role,
         gradeLevel: gradeLevel || 1,
         department,
+        birthday: birthday ? new Date(birthday) : null,
+        yearsOfService: parseInt(yearsOfService) || 0,
+        experienceYears: parseInt(experienceYears) || 0,
+        corporationId,
         isActive: true,
-        mustChangePassword: true, // 初回ログイン時にパスワード変更を促す
+        mustChangePassword: true,
       }
     })
 
     return NextResponse.json({ success: true, user: newUser })
   } catch (error) {
     console.error('POST /api/admin/staff error:', error)
-    return NextResponse.json({ error: 'スタッフの作成に失敗しました' }, { status: 500 })
+    return NextResponse.json({ error: '作成に失敗しました' }, { status: 500 })
   }
 }
 
-// スタッフ情報更新（権限変更・アカウント停止など）
+// 3. スタッフ情報更新
 export async function PATCH(req: Request) {
   try {
-    const { id, role, gradeLevel, department, isActive, fullName } = await req.json()
-
-    if (!id) {
-      return NextResponse.json({ error: 'IDが必要です' }, { status: 400 })
-    }
+    const { id, role, gradeLevel, department, isActive, fullName, birthday, yearsOfService, experienceYears } = await req.json()
 
     const updated = await prisma.user.update({
       where: { id },
       data: {
         ...(role && { role }),
-        ...(gradeLevel !== undefined && { gradeLevel }),
+        ...(gradeLevel != null && { gradeLevel }),
         ...(department && { department }),
-        ...(isActive !== undefined && { isActive }),
+        ...(isActive != null && { isActive }),
         ...(fullName && { fullName }),
+        ...(birthday !== undefined && { birthday: birthday ? new Date(birthday) : null }),
+        ...(yearsOfService != null && { yearsOfService: parseInt(yearsOfService) }),
+        ...(experienceYears != null && { experienceYears: parseInt(experienceYears) }),
       }
     })
-
-    // アカウント無効化の場合はSupabase Auth側でもBANする
-    const supabaseAdmin = getSupabaseAdmin()
-    if (isActive === false) {
-      await supabaseAdmin.auth.admin.updateUserById(id, { ban_duration: '87600h' })
-    } else if (isActive === true) {
-      await supabaseAdmin.auth.admin.updateUserById(id, { ban_duration: 'none' })
-    }
 
     return NextResponse.json({ success: true, user: updated })
   } catch (error) {
     console.error('PATCH /api/admin/staff error:', error)
-    return NextResponse.json({ error: 'スタッフ情報の更新に失敗しました' }, { status: 500 })
+    return NextResponse.json({ error: '更新に失敗しました' }, { status: 500 })
   }
 }

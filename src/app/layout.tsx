@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "減点方式ではなく、日々の頑張りや健康づくりをどんどん「足していく（プラスしていく）」人事考課システム",
 };
 
+import { Toaster } from "@/components/ui/sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,7 +30,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>{children}</body>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        {children}
+        <Toaster position="bottom-right" />
+      </body>
     </html>
   );
 }

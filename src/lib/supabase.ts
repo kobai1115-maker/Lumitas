@@ -25,7 +25,7 @@ function createSafeClient() {
           })
         })
       })
-    } as any
+    } as unknown as ReturnType<typeof createClient>
   }
 }
 

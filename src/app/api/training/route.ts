@@ -24,14 +24,14 @@ export async function GET(req: Request) {
 // 研修記録の保存＋ポイント付与
 export async function POST(req: Request) {
   try {
-    const { userId, title, type, date, hours, reportContent } = await req.json()
+    const { userId, title, type, date, hours, reportContent, imageUrl } = await req.json()
 
     if (!userId || !title || !type || !date || !hours) {
       return NextResponse.json({ error: '必須項目が不足しています' }, { status: 400 })
     }
 
     // OJT/OffJTによるポイント設定（仮のロジック: OJT 5pt, OFF_JT 10pt）
-    const earnedPoints = type === 'OFF_JT' ? 10 : 5
+    const earnedPoints = type === 'OFF_JT' || type === 'BOOK' ? 10 : 5
 
     // 1. 研修記録を作成
     const record = await prisma.trainingRecord.create({
@@ -44,6 +44,7 @@ export async function POST(req: Request) {
         reportContent: reportContent || null,
         earnedPoints,
         pointsGranted: false,
+        imageUrl: imageUrl || null,
       }
     })
 
