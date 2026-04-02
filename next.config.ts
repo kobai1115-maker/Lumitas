@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import pathS from "path";
 
 const nextConfig: NextConfig = {
   typescript: {
@@ -10,8 +11,20 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  webpack: (config, { isServer }) => {
-    // Node.js 互換モードを使用するため、特別なフォールバック設定は不要になりました
+  webpack: (config) => {
+    // 依存関係のスり替え: 'fs' 依存を抹殺した自作部品に差し替えます
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "pg-connection-string": pathS.resolve(__dirname, "src/lib/shims/pg-shim.js"),
+      "pgpass": pathS.resolve(__dirname, "src/lib/shims/pgpass-shim.js"),
+      "pg-native": false,
+      "fs": false,
+      "path": false,
+      "os": false,
+      "tls": false,
+      "net": false,
+      "dns": false,
+    };
     return config;
   },
 };
