@@ -1,10 +1,5 @@
-# Moyuukai Lumitas - Cloudflare Pages Configuration
-# このファイルは、Cloudflare Pages のビルド設定をプログラム側から強制指定するものです。
-# 管理画面で設定が見当たらない場合でも、このファイルが最優先されます。
-
+# wrangler.toml
 name = "lumitas"
-compatibility_date = "2024-11-18"
-compatibility_flags = [
-  "nodejs_compat",
-  "nodejs_compat_populate_process_env"
-]
+pages_build_output_dir = ".vercel/output/static"
+compatibility_date = "2024-03-20"
+compatibility_flags = ["nodejs_compat"]
