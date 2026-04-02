@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import pathS from "path";
 
 const nextConfig: NextConfig = {
   typescript: {
@@ -11,22 +10,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  webpack: (config) => {
-    // 依存関係のスり替え: 'fs' 依存を抹殺した自作部品に差し替えます
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "pg-connection-string": pathS.resolve(__dirname, "src/lib/shims/pg-shim.js"),
-      "pgpass": pathS.resolve(__dirname, "src/lib/shims/pgpass-shim.js"),
-      "pg-native": false,
-      "fs": false,
-      "path": false,
-      "os": false,
-      "tls": false,
-      "net": false,
-      "dns": false,
-    };
-    return config;
-  },
+  // 最終兵器: pg を「分解・加工」の対象から外します。
+  // これにより、ビルドツールが中身を見てエラー（fs がない、crypto がない等）を出すのを物理的に止めます。
+  serverExternalPackages: ["pg", "pg-connection-string"],
 };
 
 export default nextConfig;
