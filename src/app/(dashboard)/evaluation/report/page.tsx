@@ -29,7 +29,9 @@ type ReportData = {
   locationName: string
 }
 
-export default function ReportPage() {
+import { Suspense } from 'react'
+
+function ReportPageContent() {
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
   const [data, setData] = useState<ReportData | null>(null)
@@ -184,6 +186,19 @@ export default function ReportPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 flex-col gap-4">
+        <Loader2 className="w-12 h-12 animate-spin text-primary opacity-20" />
+        <p className="font-black text-gray-400 tracking-widest text-xs">読み込み中...</p>
+      </div>
+    }>
+      <ReportPageContent />
+    </Suspense>
   )
 }
 
