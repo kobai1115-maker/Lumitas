@@ -11,6 +11,20 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true, // Cloudflare Pages の静的画像配信への最適化
   },
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+      os: false,
+      net: false,
+      tls: false,
+      crypto: false,
+      stream: false,
+      dns: false,
+    };
+    return config;
+  },
 };
 
 export default nextConfig;
