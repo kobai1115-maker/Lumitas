@@ -34,8 +34,9 @@ const nextConfig: NextConfig = {
       "tls": pathS.resolve(__dirname, "src/lib/shims/empty.js"),
       "pg-connection-string": pathS.resolve(__dirname, "src/lib/shims/empty.js"),
       "pgpass": pathS.resolve(__dirname, "src/lib/shims/empty.js"),
-      // エッジ版ビルドで Node版の Prisma 設定を物理的に無効化し、エラーを根絶します
-      "@/lib/prisma.node": pathS.resolve(__dirname, "src/lib/shims/empty.js"),
+      // エッジ版ビルドで Node版の Prisma 設定を「存在しないもの」として物理遮断します
+      "@/lib/prisma.node": false,
+      "./prisma.node": false,
     };
     return config;
   },
