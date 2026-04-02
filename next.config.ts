@@ -10,19 +10,14 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    // 解決策の核心: pg をビルドツールの分析対象から「完全に除外」します。
+    // これにより、ビルドツールが中身を見て「crypto がない」と騒ぐのを物理的に封じます。
+    serverComponentsExternalPackages: ["pg"],
+  },
   webpack: (config) => {
-    // 正攻法: 古いライブラリが探している標準部品を、Cloudflare の本物の部品 (node:前置詞付き) に接続します。
-    // これにより、ビルドツールは「存在」を確認でき、実行時には Cloudflare の互換レイヤーが正しく動作します。
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "crypto": "node:crypto",
-      "fs": "node:fs",
-      "path": "node:path",
-      "net": "node:net",
-      "tls": "node:tls",
-      "stream": "node:stream",
-      "os": "node:os",
-    };
+    // Webpack レベルでも pg を外部化し、一切の中身の解析を禁止します。
+    config.externals = [...(config.externals || []), "pg", "pg-native"];
     return config;
   },
 };
