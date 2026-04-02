@@ -1,31 +1,11 @@
-import { PrismaClient } from '@prisma/client'
+import edgeClient from './prisma.edge'
+import nodeClient from './prisma.node'
 
-let prisma: PrismaClient
-
-if (process.env.NEXT_RUNTIME === 'edge') {
-  prisma = new PrismaClient()
-} else {
-  // nodejs サーバーサイドでの初期化 - eval('require') を使い webpack の深追いを防ぎます
-  const { Pool } = eval('require')('pg')
-  const { PrismaPg } = eval('require')('@prisma/adapter-pg')
-  
-  const prismaClientSingleton = () => {
-    if (process.env.DATABASE_URL?.includes('supabase') || process.env.NODE_ENV === 'production') {
-      const pool = new Pool({ 
-        connectionString: process.env.DATABASE_URL,
-        max: 10,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
-      })
-      const adapter = new PrismaPg(pool)
-      return new PrismaClient({ adapter })
-    }
-    return new PrismaClient()
-  }
-
-  const g = globalThis as any
-  prisma = g.prismaGlobal ?? prismaClientSingleton()
-  if (process.env.NODE_ENV !== 'production') g.prismaGlobal = prisma
-}
+/**
+ * 実行環境 (Edge / Node.js) に応じて最適な Prisma クライアントを切り替えます。
+ * これにより、Cloudflare のビルドプロセスが Node.js 専用の依存関係 (pg 等) に
+ * 接触することを物理的に防止します。
+ */
+const prisma = process.env.NEXT_RUNTIME === 'edge' ? edgeClient : nodeClient
 
 export default prisma
