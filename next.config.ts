@@ -24,13 +24,16 @@ const nextConfig: NextConfig = {
       dns: false,
     };
     // さらに強力な別名（alias）設定で webpack を「納得」させます
+    const pathS = require('path');
     config.resolve.alias = {
       ...config.resolve.alias,
-      "fs": false,
-      "path": false,
-      "stream": false,
-      "net": false,
-      "tls": false,
+      "fs": pathS.resolve(__dirname, "src/lib/shims/empty.js"),
+      "path": pathS.resolve(__dirname, "src/lib/shims/empty.js"),
+      "stream": pathS.resolve(__dirname, "src/lib/shims/empty.js"),
+      "net": pathS.resolve(__dirname, "src/lib/shims/empty.js"),
+      "tls": pathS.resolve(__dirname, "src/lib/shims/empty.js"),
+      "pg-connection-string": pathS.resolve(__dirname, "src/lib/shims/empty.js"),
+      "pgpass": pathS.resolve(__dirname, "src/lib/shims/empty.js"),
     };
     return config;
   },
