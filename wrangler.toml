@@ -1,8 +1,10 @@
-name = "care-grow-ai"
-compatibility_date = "2024-04-01"
-compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".vercel/output"
+# Moyuukai Lumitas - Cloudflare Pages Configuration
+# このファイルは、Cloudflare Pages のビルド設定をプログラム側から強制指定するものです。
+# 管理画面で設定が見当たらない場合でも、このファイルが最優先されます。
 
-[vars]
-# ここに本番環境用の環境変数を追加できます
-# (Supabase URL 等の機密情報は Cloudflare ダッシュボードから設定することをお勧めします)
+name = "lumitas"
+compatibility_date = "2024-11-18"
+compatibility_flags = [
+  "nodejs_compat",
+  "nodejs_compat_populate_process_env"
+]
