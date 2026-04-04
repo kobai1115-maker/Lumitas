@@ -115,36 +115,38 @@ export default function LandingPage() {
             </motion.div>
             
             <motion.div 
-              initial={{ opacity: 0, scale: 0.8, x: 50 }}
+              initial={{ opacity: 0, scale: 0.9, x: 20 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="relative"
+              className="relative lg:mt-0 mt-12"
             >
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-white/50 blur-[100px] rounded-full -z-10" />
-              <div className="relative rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.12)] border border-white/20">
+              <div className="relative rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.12)] border border-white/20 bg-white">
                 <Image 
                   src="/assets/hero_visual.png" 
-                  alt="CareGrow AI Dashboard Preview" 
-                  width={800} 
-                  height={600}
-                  className="w-full h-auto transform hover:scale-105 transition-transform duration-700"
+                  alt="CareGrow AI Concept Visual" 
+                  width={1200} 
+                  height={900}
+                  className="w-full h-auto object-cover transform hover:scale-105 transition-transform duration-700"
+                  priority
                 />
                 
                 {/* Floating Card: AI Insight */}
                 <motion.div 
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="absolute bottom-10 -left-10 bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-2xl border border-white/20 hidden xl:block max-w-[280px]"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ delay: 0.8, duration: 0.5 }}
+                  className="absolute bottom-6 left-6 right-6 lg:bottom-10 lg:-left-12 lg:right-auto bg-white/95 backdrop-blur-md p-5 lg:p-6 rounded-3xl shadow-2xl border border-white/20 max-w-none lg:max-w-[300px] z-20"
                 >
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-emerald-100 rounded-xl text-emerald-600">
-                        <CheckCircle2 className="w-5 h-5" />
+                      <CheckCircle2 className="w-4 h-4 lg:w-5 lg:h-5" />
                     </div>
-                    <span className="text-xs font-black text-slate-900 uppercase">AIによる気づき</span>
+                    <span className="text-[10px] lg:text-xs font-black text-slate-900 uppercase">AIによる気づき</span>
                   </div>
-                  <p className="text-sm font-bold text-slate-500 leading-relaxed italic">
-                    「改善案の質が高まっています。スタッフ全体の意識向上につながります。」
+                  <p className="text-xs lg:text-sm font-bold text-slate-600 leading-relaxed italic" style={{ fontFamily: '"Meiryo", sans-serif' }}>
+                    「スタッフの表情が明るくなり、利用者様への声かけの質が目に見えて向上しています。AIによる加点評価が自信に繋がっているようです。」
                   </p>
                 </motion.div>
               </div>
@@ -209,20 +211,20 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-3 gap-8">
             <ActivityCard 
               image="/assets/lp_1on1.png"
-              title="信頼を築く1on1面談"
-              description="上司との何気ない対話や目標の共有。AIがその意図を汲み取り、成長の記録として蓄積します。"
+              title="成長を分かち合う1on1面談"
+              description="スタッフの『やりたい』や『できた』に徹底して耳を傾けます。AIが対話の本質を汲み取り、客観的な成長の記録として蓄積。納得感のあるキャリア形成を支えます。"
               delay={0}
             />
             <ActivityCard 
               image="/assets/lp_support.png"
-              title="スタッフ同士の助け合い"
-              description="忙しい時のフォローや、同僚へのナイスな一言。チームを支える行動はピアボーナスとして還元されます。"
+              title="チームを活気づける助け合い"
+              description="忙しい時間帯のフォローや、感謝の言葉。これまで『見えなかった貢献』をAIが可視化。チームワークを支える行動が、しっかり評価と報酬に繋がります。"
               delay={0.2}
             />
             <ActivityCard 
               image="/assets/lp_volunteer.png"
-              title="ボランティア・地域貢献"
-              description="公園清掃などの活動も、社会福祉法人の大切な一歩。施設をこえた貢献活動もポイント対象です。"
+              title="地域に愛される活動"
+              description="施設内にとどまらない、地域清掃や交流イベント。社会福祉法人としての価値を高めるボランティア活動も、Lumitasなら確かな貢献実績としてカウントします。"
               delay={0.4}
             />
           </div>
@@ -408,7 +410,7 @@ function ActivityCard({ image, title, description, delay }: { image: string, tit
       </div>
       <div className="p-8 space-y-4">
         <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none group-hover:text-primary transition-colors">{title}</h3>
-        <p className="text-sm font-bold text-slate-500 leading-relaxed">
+        <p className="text-sm font-bold text-slate-500 leading-relaxed" style={{ fontFamily: '"Meiryo", sans-serif' }}>
           {description}
         </p>
       </div>
