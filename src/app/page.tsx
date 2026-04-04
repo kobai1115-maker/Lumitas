@@ -121,15 +121,17 @@ export default function LandingPage() {
               className="relative lg:mt-0 mt-12"
             >
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-white/50 blur-[100px] rounded-full -z-10" />
-              <div className="relative rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.12)] border border-white/20 bg-white">
-                <Image 
-                  src="/assets/hero_visual.png" 
-                  alt="CareGrow AI Concept Visual" 
-                  width={1200} 
-                  height={900}
-                  className="w-full h-auto object-cover transform hover:scale-105 transition-transform duration-700"
-                  priority
-                />
+              <div className="relative">
+                <div className="relative rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.12)] border border-white/20 bg-white z-10">
+                  <Image 
+                    src="/assets/hero_visual.png" 
+                    alt="CareGrow AI Concept Visual" 
+                    width={1200} 
+                    height={900}
+                    className="w-full h-auto object-cover transform hover:scale-105 transition-transform duration-700"
+                    priority
+                  />
+                </div>
                 
                 {/* Floating Card: AI Insight */}
                 <motion.div 
@@ -137,7 +139,7 @@ export default function LandingPage() {
                   animate={{ y: 0, opacity: 1 }}
                   whileHover={{ scale: 1.05 }}
                   transition={{ delay: 0.8, duration: 0.5 }}
-                  className="absolute bottom-6 left-6 right-6 lg:bottom-10 lg:-left-12 lg:right-auto bg-white/95 backdrop-blur-md p-5 lg:p-6 rounded-3xl shadow-2xl border border-white/20 max-w-none lg:max-w-[300px] z-20"
+                  className="absolute bottom-6 left-6 right-6 lg:bottom-10 lg:-left-12 lg:right-auto bg-white/95 backdrop-blur-md p-5 lg:p-6 rounded-3xl shadow-2xl border border-white/20 max-w-none lg:max-w-[320px] z-20"
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-emerald-100 rounded-xl text-emerald-600">
