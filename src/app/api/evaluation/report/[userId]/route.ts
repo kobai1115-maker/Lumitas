@@ -1,17 +1,34 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { getServerAuthUser } from '@/lib/auth-server'
 
 export async function GET(
   request: Request,
   { params }: { params: { userId: string } }
 ) {
   try {
+    const { user: currentUser, error: authError } = await getServerAuthUser()
+    if (authError || !currentUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const userId = params.userId
 
-    // 本来はDB(Prisma)から、指定期間の評価データ・AIサマリー・マスター情報を集計
-    // ここではデモ用として、モックデータを返却する
-    
-    // 社会福祉法人 萌佑会 / ルミタス 向けのデモデータ
+    // [権限管理] 他人の評価レポート閲覧チェック
+    if (userId !== currentUser.id && currentUser.role !== 'ADMIN') {
+      if (currentUser.role === 'MANAGER') {
+        const targetUser = await (prisma.user as any).findFirst({
+          where: { id: userId, corporationId: currentUser.corporationId, facilityId: currentUser.facilityId }
+        })
+        if (!targetUser) {
+          return NextResponse.json({ error: '他施設の職員の評価情報は閲覧できません' }, { status: 403 })
+        }
+      } else {
+        return NextResponse.json({ error: '自分の評価情報以外の閲覧は禁止されています' }, { status: 403 })
+      }
+    }
+
+    // デモ用データ（本来的にはPrismaで集計）
     const demoStaffList: Record<string, any> = {
       'u1': { fullName: '小林 洋貴', position: '管理者', dept: '管理部', grade: 6, comment: '多角的な視点から施設全体のマネジメントを完遂。特にDX推進において顕著なリーダーシップを発揮しました。' },
       'u2': { fullName: '山田 里美', position: '副管理者', dept: '管理部', grade: 5, comment: '各部署間の連携を円滑にし、待機者解消に大きく貢献。現場スタッフのメンタルケアにおいても高い評価を得ています。' },
@@ -43,7 +60,7 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('Final API fallback error:', error)
+    console.error('GET /api/evaluation/report error:', error)
     return NextResponse.json({ error: 'Failed to access report data' }, { status: 500 })
   }
 }

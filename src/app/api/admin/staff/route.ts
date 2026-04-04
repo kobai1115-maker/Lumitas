@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { getServerAuthUser } from '@/lib/auth-server'
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -11,29 +12,36 @@ function getSupabaseAdmin() {
 }
 
 // 1. スタッフ一覧取得 (法人IDでフィルタリング)
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const staff = await prisma.user.findMany({
-      where: { corporationId: 'corp-001' }, // 暫定的に萌佑会のID固定
-      orderBy: [{ department: 'asc' }, { fullName: 'asc' }],
-      select: {
-        id: true,
-        staffId: true,
-        email: true,
-        fullName: true,
-        role: true,
-        gradeLevel: true,
-        department: true,
-        birthday: true,
-        yearsOfService: true,
-        experienceYears: true,
-        welfarePoints: true,
-        isActive: true,
-        mustChangePassword: true,
-        createdAt: true,
+    const { user, error } = await getServerAuthUser()
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const isActive = searchParams.get('isActive') === 'true'
+
+    // フィルタ条件の構築
+    const where: any = {
+      corporationId: user.corporationId,
+      isActive: isActive
+    }
+
+    // [権限管理] 法人管理者以外は、自施設のデータのみに制限
+    if (user.role !== 'ADMIN') {
+      where.facilityId = user.facilityId
+    }
+
+    const staffList = await (prisma.user as any).findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        facility: { select: { name: true } },
+        division: { select: { name: true } }
       }
     })
-    return NextResponse.json(staff)
+    return NextResponse.json(staffList)
   } catch (error) {
     console.error('GET /api/admin/staff error:', error)
     return NextResponse.json({ error: '取得に失敗しました' }, { status: 500 })
@@ -43,20 +51,38 @@ export async function GET() {
 // 2. スタッフ新規作成
 export async function POST(req: Request) {
   try {
+    const { user: currentUser, error: authError } = await getServerAuthUser()
+    if (authError || !currentUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { 
       staffId, 
-      email, 
       fullName, 
+      email, 
       role, 
       gradeLevel, 
       department,
+      facilityId: targetFacilityId,
+      divisionId: targetDivisionId,
       birthday,
       yearsOfService,
       experienceYears
     } = await req.json()
     
-    // 法人IDはログインセッション等から取るべきだが、現在は萌佑会固定
-    const corporationId = 'corp-001'
+    // 職員IDのバリデーション (7桁)
+    if (!staffId || staffId.length !== 7) {
+      return NextResponse.json({ error: '職員IDは必ず7桁で入力してください（例: 1aa0001）' }, { status: 400 })
+    }
+
+    // [権限管理] 法人管理者以外は、他施設の職員を登録できない
+    if (currentUser.role !== 'ADMIN') {
+      if (targetFacilityId && targetFacilityId !== currentUser.facilityId) {
+        return NextResponse.json({ error: '他施設の職員を登録する権限がありません' }, { status: 403 })
+      }
+    }
+
+    const corporationId = currentUser.corporationId
 
     const newUser = await prisma.user.create({
       data: {
@@ -85,11 +111,17 @@ export async function POST(req: Request) {
 // 3. スタッフ情報更新
 export async function PATCH(req: Request) {
   try {
-    const { id, role, gradeLevel, department, isActive, fullName, birthday, yearsOfService, experienceYears } = await req.json()
+    const { id, staffId, role, gradeLevel, department, isActive, fullName, birthday, yearsOfService, experienceYears } = await req.json()
+
+    // 職員IDの変更がある場合、7桁チェック
+    if (staffId && staffId.length !== 7) {
+      return NextResponse.json({ error: '職員IDは必ず7桁で入力してください' }, { status: 400 })
+    }
 
     const updated = await prisma.user.update({
       where: { id },
       data: {
+        ...(staffId && { staffId }),
         ...(role && { role }),
         ...(gradeLevel != null && { gradeLevel }),
         ...(department && { department }),

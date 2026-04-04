@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Home, Target, Award, Sparkles, Mic, LogOut, CheckSquare, MessageSquare, Building2, Users, BookOpen, Settings2, Settings, ChevronDown, Heart } from 'lucide-react'
+import { Home, Target, Award, Sparkles, Mic, LogOut, CheckSquare, MessageSquare, Building2, Users, BookOpen, Settings2, Settings, ChevronDown, Heart, Network } from 'lucide-react'
 import { clsx } from 'clsx'
 import { supabase } from '@/lib/supabase'
+import { useProfile } from '@/hooks/use-profile'
 
 export default function DashboardLayout({
   children,
@@ -15,12 +16,44 @@ export default function DashboardLayout({
 }) {
   const router = useRouter()
   const pathname = usePathname()
+  const { profile, loading, isSystemAdmin, isCorpAdmin, isFacilityManager, isStaff, refresh } = useProfile()
   const [isReady, setIsReady] = useState(false)
 
-  // 開発環境用のセッション擬似バイパス（リリース時はAuthサーバーの設定が必要です）
+  // 認証ガード: ログインしていないユーザーをログイン画面へリダイレクト
   useEffect(() => {
-    setIsReady(true)
-  }, [])
+    let mounted = true
+    const checkAuth = async () => {
+      // API（profile）を待つだけでなく、まずクライアント側のセッションを直接確認
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!loading) {
+        // セッションもプロフィールも無い場合にのみ、未ログインとして扱う
+        if (!session && !profile) {
+          router.push('/login')
+        } else if (profile || session) {
+          // セッションがあれば、プロフィール読み込み中であっても「準備完了」に近い状態とする
+          setIsReady(true)
+        }
+      }
+    }
+    
+    // 認証状態の変化を監視（ログイン成功時などに再取得）
+    // @ts-ignore
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, _session) => {
+      console.log('--- Auth Event ---', event)
+      if (mounted) {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          refresh()
+        }
+      }
+    })
+    
+    checkAuth()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [loading, profile, router, refresh])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -41,10 +74,17 @@ export default function DashboardLayout({
     { name: '研修記録', href: '/training',    icon: BookOpen },
     { name: 'プラス活動', href: '/plus-activity', icon: Heart },
     { name: '組織目標', href: '/org-goals',   icon: Building2 },
-    { name: 'スタッフ管理', href: '/admin/staff', icon: Users },
-    { name: '職位・権限設定', href: '/admin/roles', icon: Settings2 },
-    { name: '施設・拠点設定', href: '/admin/settings', icon: Settings },
+    { name: 'スタッフ管理', href: '/admin/staff', icon: Users, roles: ['SYSTEM_ADMIN', 'ADMIN', 'MANAGER'] },
+    { name: '組織管理', href: '/admin/organization', icon: Network, roles: ['SYSTEM_ADMIN', 'ADMIN'] },
+    { name: '職位・権限設定', href: '/admin/roles', icon: Settings2, roles: ['SYSTEM_ADMIN', 'ADMIN'] },
+    { name: '施設・拠点設定', href: '/admin/settings', icon: Settings, roles: ['SYSTEM_ADMIN', 'ADMIN'] },
   ]
+
+  const filteredSubNav = subNavItems.filter(item => {
+    if (!('roles' in item)) return true // roles 定義がないものは全員
+    const roles = (item as any).roles as string[]
+    return roles.includes(profile?.role || '')
+  })
 
   return (
     <div className="flex min-h-screen bg-gray-50 flex-col md:flex-row pb-[env(safe-area-inset-bottom)]">
@@ -88,30 +128,32 @@ export default function DashboardLayout({
               })}
             </nav>
 
-            {/* サブメニュー */}
-            <nav className="space-y-1">
-              <p className="text-[10px] font-black text-gray-400 px-3 mb-2 uppercase tracking-[0.2em]">業務メニュー</p>
-              {subNavItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname.startsWith(item.href)
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    prefetch={true}
-                    className={clsx(
-                      "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150",
-                      isActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                    )}
-                  >
-                    <Icon className={clsx("w-4 h-4", isActive ? "stroke-[2.5px]" : "stroke-2")} />
-                    {item.name}
-                  </Link>
-                )
-              })}
-            </nav>
+            {/* サブメニュー (権限に応じて表示) */}
+            {filteredSubNav.length > 0 && (
+              <nav className="space-y-1">
+                <p className="text-[10px] font-black text-gray-400 px-3 mb-2 uppercase tracking-[0.2em]">業務・管理メニュー</p>
+                {filteredSubNav.map((item) => {
+                  const Icon = item.icon
+                  const isActive = pathname.startsWith(item.href)
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      prefetch={true}
+                      className={clsx(
+                        "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150",
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                      )}
+                    >
+                      <Icon className={clsx("w-4 h-4", isActive ? "stroke-[2.5px]" : "stroke-2")} />
+                      {item.name}
+                    </Link>
+                  )
+                })}
+              </nav>
+            )}
           </div>
 
           <div className="p-4 border-t border-gray-100 bg-gray-50/30">

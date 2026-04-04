@@ -1,15 +1,40 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { getServerAuthUser } from '@/lib/auth-server'
 
 // 1on1面談記録の一覧取得
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { user, error } = await getServerAuthUser()
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // フィルタ条件の構築
+    const where: any = {
+      corporationId: user.corporationId
+    }
+
+    // [権限管理] 
+    if (user.role === 'ADMIN') {
+      // 法人管理者は制限なし
+    } else if (user.role === 'MANAGER') {
+      // 施設長は、自施設内の全記録
+      where.facilityId = user.facilityId
+    } else {
+      // 一般職は、自分自身が関わる記録のみ (OR条件)
+      where.OR = [
+        { employeeId: user.id },
+        { managerId: user.id }
+      ]
+    }
+
     const notes = await prisma.oneOnOneNote.findMany({
-      where: { corporationId: 'corp-001' },
+      where,
       orderBy: { meetingDate: 'desc' },
       include: {
-        employee: { select: { fullName: true, department: true } },
-        manager: { select: { fullName: true } }
+        employee: { select: { fullName: true, department: true, staffId: true } },
+        manager: { select: { fullName: true, staffId: true } }
       }
     })
     return NextResponse.json(notes)
@@ -22,18 +47,37 @@ export async function GET() {
 // 1on1面談記録の保存＋ポイント付与
 export async function POST(req: Request) {
   try {
-    const { employeeId, managerId, content, aiActionItems, meetingDate } = await req.json()
+    const { user: currentUser, error: authError } = await getServerAuthUser()
+    if (authError || !currentUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    if (!employeeId || !managerId || !content || !meetingDate) {
+    const { employeeId, managerId: requestedManagerId, content, aiActionItems, meetingDate } = await req.json()
+
+    if (!employeeId || !requestedManagerId || !content || !meetingDate) {
       return NextResponse.json({ error: '必須項目が不足しています' }, { status: 400 })
     }
 
+    // [権限管理] 実施者（マネージャー）の検証
+    const actualManagerId = (currentUser.role === 'ADMIN') ? requestedManagerId : currentUser.id;
+
+    // [権限管理] 受講者が同じ施設に所属しているかチェック
+    if (currentUser.role !== 'ADMIN') {
+      const targetEmployee = await (prisma.user as any).findFirst({
+        where: { id: employeeId, corporationId: currentUser.corporationId, facilityId: currentUser.facilityId }
+      })
+      if (!targetEmployee) {
+        return NextResponse.json({ error: '他施設の職員の面談記録は作成できません' }, { status: 403 })
+      }
+    }
+
     // 1. 面談記録を保存
-    const note = await prisma.oneOnOneNote.create({
+    const note = await (prisma.oneOnOneNote as any).create({
       data: {
-        corporationId: 'corp-001',
+        corporationId: currentUser.corporationId,
+        facilityId: currentUser.facilityId, // マネージャーの所属施設をセット
         employeeId,
-        managerId,
+        managerId: actualManagerId,
         content,
         aiActionItems: aiActionItems || null,
         meetingDate: new Date(meetingDate),
@@ -53,7 +97,7 @@ export async function POST(req: Request) {
         }),
         // 実施者（manager）に3ポイント付与
         prisma.user.update({
-          where: { id: managerId },
+          where: { id: actualManagerId },
           data: { welfarePoints: { increment: note.managerPoints } }
         }),
         // 付与済みフラグを立てる

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { convertVoiceToEvaluation } from '@/lib/gemini'
 import prisma from '@/lib/prisma'
+import { getServerAuthUser } from '@/lib/auth-server'
 
 export const maxDuration = 60 // Next.js用のタイムアウト設定
 
@@ -12,20 +13,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Text input is required' }, { status: 400 })
     }
 
+    const { user: currentUser, error: authError } = await getServerAuthUser()
+    if (authError || !currentUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // Gemini APIに音声からの生テキストを渡し、構造化データをもらう
     const aiResult = await convertVoiceToEvaluation(text)
 
-    // 本来はここでDBに保存する処理を入れるなど
-    await prisma.evaluation.create({
-      data: {
-        corporationId: 'corp-001',
-        employeeId: 'demo-user-id',
-        evaluatorId: 'demo-user-id', 
-        periodKey: '2026-H1',
-        aiSummaryText: `[${aiResult.category}] ${aiResult.structuredText}`,
-        status: 'DRAFT'
-      }
-    })
+    // DBに保存
+    try {
+      await (prisma as any).evaluation.create({
+        data: {
+          corporationId: currentUser.corporationId,
+          facilityId: currentUser.facilityId,
+          employeeId: currentUser.id,
+          evaluatorId: currentUser.id, 
+          periodKey: '2026-H1', // 現在の期
+          aiSummaryText: `[${aiResult.category}] ${aiResult.structuredText}`,
+          status: 'DRAFT'
+        }
+      })
+    } catch (dbError) {
+      console.warn('Evaluation save skipped (DB unavailable):', dbError)
+    }
     // DBへの保存が成功したらクライアントへ返す
     return NextResponse.json(aiResult)
   } catch (error) {

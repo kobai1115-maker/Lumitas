@@ -52,7 +52,7 @@ async function main() {
         employeeId: u.id,
         evaluatorId: 'u1',
         periodKey: '2026-H1',
-        status: 'FINALIZED',
+        status: 'FINAL_EVALUATED',
         achievementScore: 85,
         competencyScore: 80,
         sentimentScore: 90,

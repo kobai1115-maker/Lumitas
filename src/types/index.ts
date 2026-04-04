@@ -42,11 +42,22 @@ export type UserProfile = {
   email: string
   fullName: string
   role: Role
-  positionId: string     // Link to PositionDefinition
-  positionName: string   // 表示用の役職名 (例: 施設長)
-  departmentId: string   // Link to Department
-  departmentName: string // 部署名
+  corporationId?: string
+  facilityId?: string
+  divisionId?: string
+  unitId?: string
+  corporationName?: string
+  facilityName?: string
+  divisionName?: string
+  unitName?: string
+  positionId?: string    // Optional for now
+  positionName?: string  // Optional for now
+  departmentId?: string  // Optional for now
+  departmentName?: string // Optional for now
+  department: string     // Actual department field in DB
   gradeLevel: number
+  experienceYears: number
+  yearsOfService: number
   welfarePoints: number
   superiorId?: string    // 直属の上司ID (評価者)
 }

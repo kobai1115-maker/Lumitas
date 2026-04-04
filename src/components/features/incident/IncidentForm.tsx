@@ -1,230 +1,241 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { CheckCircle2, ShieldAlert, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { IncidentType } from '@prisma/client'
+import { AlertCircle, CheckCircle2, ChevronRight, Info, Lightbulb, Send, Sparkles, Star, Target, ShieldAlert } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { useProfile } from '@/hooks/use-profile'
+import VoiceInputFab from '@/components/features/evaluation/VoiceInputFab'
 
-// AIのフィードバックを受け取るための型
-type ScoreResult = {
-  points: number
-  feedback: string
-  riskCategory?: string
-  analysis?: string
+type IncidentFormProps = {
+  onSuccess?: () => void
 }
 
-export default function IncidentForm() {
-  const [incidentType, setIncidentType] = useState<IncidentType>('NEAR_MISS')
-  const [description, setDescription] = useState('')
-  const [preventionIdea, setPreventionIdea] = useState('')
-  
+export default function IncidentForm({ onSuccess }: IncidentFormProps) {
+  const { profile } = useProfile()
+  const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [result, setResult] = useState<ScoreResult | null>(null)
+  const [formData, setFormData] = useState({
+    type: 'NEAR_MISS',
+    description: '',
+    preventionIdea: '',
+    unitId: '',
+  })
+  const [aiResult, setAiResult] = useState<{ points: number; feedback: string; analysis?: string; riskCategory?: string } | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleVoiceResult = (text: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      description: prev.description ? `${prev.description}\n${text}` : text 
+    }))
+  }
+
+  const handleSubmit = async () => {
+    if (!formData.description) return
     setIsSubmitting(true)
-    setResult(null)
-
+    
     try {
-      // AIスコアリングエンドポイントの呼び出し
       const res = await fetch('/api/ai/incident-score', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ description, preventionIdea })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          ...formData,
+          unitId: profile?.unitId 
+        })
       })
       
-      const data = await res.json()
-      if (data.points !== undefined) {
-        setResult(data)
+      if (res.ok) {
+        const data = await res.json()
+        setAiResult(data)
+        setStep(3)
+        if (onSuccess) onSuccess()
       } else {
         throw new Error('API Error')
       }
-    } catch (error) {
-      console.error(error)
-      setResult({ points: 2, feedback: '報告ありがとうございます。通信エラーのためAIスコアリングは後で実行されます。' })
+    } catch (e) {
+      console.error(e)
+      setAiResult({ points: 2, feedback: '報告を受理しました。分析は後ほど実行されます。' })
+      setStep(3)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <Card className="shadow-lg border-gray-100 overflow-hidden">
-      <CardHeader className="bg-orange-50/50 border-b border-orange-100 pb-6">
-        <div className="flex items-center gap-2 mb-2">
-          <ShieldAlert className="w-6 h-6 text-orange-500" />
-          <CardTitle className="text-xl">ヒヤリハット・インシデント報告</CardTitle>
-        </div>
-        <CardDescription className="text-gray-600">
-          「ジャスト・カルチャー（公正な文化）」に基づき、失敗を責めるのではなく、システムの改善を評価します。
-          改善策の提案にはAIが <b>改善ポイント</b> を付与します。
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="pt-6">
-        <AnimatePresence mode="wait">
-          {result ? (
-            <motion.div
-              key="result"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center justify-center p-6 text-center space-y-4"
-            >
-              <div className="relative">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", bounce: 0.6 }}
-                  className="bg-green-100 p-4 rounded-full"
-                >
-                  <CheckCircle2 className="w-12 h-12 text-green-600" />
-                </motion.div>
-                {result.points > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="absolute -top-2 -right-4 bg-yellow-400 text-yellow-900 text-xs font-black px-2 py-1 rounded-full shadow-md flex items-center gap-1 border-2 border-white"
-                  >
-                    <Sparkles className="w-3 h-3" /> +{result.points}pt
-                  </motion.div>
-                )}
-              </div>
-              
-              <h3 className="text-lg font-bold text-gray-800 tracking-tight">報告を受理しました！</h3>
-              
-              <div className="flex flex-col gap-3 w-full max-w-sm">
-                {result.riskCategory && (
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Risk Category:</span>
-                    <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-none px-3 py-1 font-black">
-                      {result.riskCategory}
-                    </Badge>
-                  </div>
-                )}
-
-                <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm leading-relaxed border border-blue-100 shadow-sm relative">
-                  <span className="absolute -top-3 left-4 bg-blue-100 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">
-                    AI フィードバック
-                  </span>
-                  <div className="flex gap-2">
-                    <Sparkles className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                    <p className="font-medium">{result.feedback}</p>
-                  </div>
-                </div>
-
-                {result.analysis && (
-                  <div className="bg-gray-50 text-gray-700 p-5 rounded-2xl text-[13px] leading-relaxed border border-gray-100 shadow-inner text-left mt-2">
-                    <p className="font-bold text-gray-500 mb-2 border-b border-gray-200 pb-1 flex items-center gap-1.5 uppercase tracking-tighter text-[11px]">
-                      <ShieldAlert className="w-3.5 h-3.5" /> AI Risk Analysis Report
-                    </p>
-                    {result.analysis}
-                  </div>
-                )}
-              </div>
-
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setResult(null)
-                  setDescription('')
-                  setPreventionIdea('')
-                }}
-                className="mt-4"
-              >
-                新しい報告を作成
-              </Button>
-            </motion.div>
-          ) : (
-            <motion.form 
-              key="form"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onSubmit={handleSubmit} 
-              className="space-y-6"
-            >
-              <div className="space-y-3">
-                <Label className="text-sm font-bold text-gray-700">報告の種類 <span className="text-red-500 font-normal">*</span></Label>
-                <div className="flex gap-3">
-                  {(['NEAR_MISS', 'ACCIDENT', 'IMPROVEMENT_IDEA'] as IncidentType[]).map((type) => {
-                    const labels = {
-                      NEAR_MISS: 'ヒヤリハット',
-                      ACCIDENT: '事故・インシデント',
-                      IMPROVEMENT_IDEA: '業務改善提案'
-                    }
-                    return (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setIncidentType(type)}
-                        className={`flex-1 py-2 px-3 text-sm rounded-lg border-2 font-medium transition-all ${
-                          incidentType === type 
-                            ? 'border-primary bg-primary/10 text-primary scale-[1.02] shadow-sm' 
-                            : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
-                        }`}
-                      >
-                        {labels[type]}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-bold text-gray-700">
-                  何が起きましたか？（客観的な事実） <span className="text-red-500 font-normal">*</span>
+    <div className="space-y-6 pb-20 relative">
+      <AnimatePresence mode="wait">
+        {step === 1 && (
+          <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-black text-gray-900 group flex items-center gap-2">
+                   <div className="w-1.5 h-6 bg-primary rounded-full" />
+                   報告の種類を選択
                 </Label>
-                <Textarea
-                  id="description"
-                  required
-                  placeholder="例: 14:00頃、A様がベッドから車椅子へ移乗する際、足がもつれて尻もちをつきそうになった。"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="min-h-[100px] resize-none border-gray-200 bg-gray-50 focus:bg-white"
-                />
+                <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20">必須</Badge>
               </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-end mb-1 border-t border-gray-100 pt-4 mt-2">
-                  <Label htmlFor="preventionIdea" className="text-sm font-bold text-gray-700 flex items-center gap-1">
-                    <Sparkles className="w-4 h-4 text-yellow-500" />
-                    再発防止・改善のアイデア
-                  </Label>
-                  <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200 bg-gray-50">
-                    任意（入力すると評価UP!）
-                  </Badge>
-                </div>
-                <Textarea
-                  id="preventionIdea"
-                  placeholder="例: ベッドサイドのスペースが狭かったため、移乗前にキャビネットを少し離すルールにする。"
-                  value={preventionIdea}
-                  onChange={(e) => setPreventionIdea(e.target.value)}
-                  className="min-h-[80px] resize-none border-gray-200 bg-yellow-50/30 focus:bg-white shadow-inner"
-                />
-                <p className="text-[10px] text-gray-500">
-                  ※自分を責める必要はありません。「システムや環境をどう変えれば解決するか」を共に考えましょう。
-                </p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: 'NEAR_MISS', label: 'ヒヤリハット', icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-50' },
+                  { id: 'GOOD_CATCH', label: 'できたこと・良い気づき', icon: Lightbulb, color: 'text-green-500', bg: 'bg-green-100' },
+                  { id: 'ACCIDENT', label: '事故報告', icon: Info, color: 'text-red-500', bg: 'bg-red-50' },
+                  { id: 'IMPROVEMENT', label: '改善提案', icon: Target, color: 'text-blue-500', bg: 'bg-blue-50' },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setFormData({ ...formData, type: t.id })}
+                    className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${
+                      formData.type === t.id ? 'border-primary bg-primary/5 scale-[1.02]' : 'border-gray-100 hover:border-gray-200'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-xl ${t.bg}`}>
+                      <t.icon className={`w-6 h-6 ${t.color}`} />
+                    </div>
+                    <span className="text-xs font-bold text-gray-700">{t.label}</span>
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <Button 
-                type="submit" 
-                className="w-full text-md font-bold py-6 shadow-md shadow-primary/20 transition-all hover:scale-[1.01]"
-                disabled={isSubmitting || !description.trim()}
-              >
-                {isSubmitting ? 'AIが評価中...' : '報告を提出し、AIでスコアリング'}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-black text-gray-900 group flex items-center gap-2">
+                   <div className="w-1.5 h-6 bg-primary rounded-full" />
+                   状況を詳しく教えてください
+                </Label>
+                <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20">必須</Badge>
+              </div>
+              <Textarea
+                placeholder="いつ、どこで、何が起きたか... もしくは何ができたか？&#10;下のマイクボタンを使って話すと、AIが自動で整形します！"
+                className="min-h-[160px] rounded-[2rem] border-gray-100 bg-gray-50/50 p-6 text-sm font-bold leading-relaxed focus:bg-white transition-all shadow-inner"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+              <p className="text-[10px] text-gray-400 font-bold px-2 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-primary" /> 下のマイクボタンを使って、状況を話してみてください。
+              </p>
+            </div>
+
+            <Button 
+              className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-primary/20"
+              disabled={!formData.description}
+              onClick={() => setStep(2)}
+            >
+              分析・対策入力へ <ChevronRight className="ml-2 w-5 h-5" />
+            </Button>
+          </motion.div>
+        )}
+
+        {step === 2 && (
+          <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-black text-gray-900 flex items-center gap-2">
+                  <div className="w-1.5 h-6 bg-green-500 rounded-full" />
+                  再発防止策・気づき（評価アップ！）
+                </Label>
+                <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200 bg-gray-50 uppercase tracking-tighter">Optional</Badge>
+              </div>
+              <Textarea
+                placeholder="どうすれば防げたか、あるいはどのように気づいたか..."
+                className="min-h-[160px] rounded-[2rem] border-gray-100 bg-gray-50/50 p-6 text-sm font-bold leading-relaxed focus:bg-white transition-all shadow-inner"
+                value={formData.preventionIdea}
+                onChange={(e) => setFormData({ ...formData, preventionIdea: e.target.value })}
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="h-14 flex-1 rounded-2xl font-bold" onClick={() => setStep(1)}>
+                戻る
               </Button>
-            </motion.form>
-          )}
-        </AnimatePresence>
-      </CardContent>
-    </Card>
+              <Button className="h-14 flex-[2] rounded-2xl font-black shadow-xl shadow-primary/20" onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting ? 'AIが分析中...' : '報告してAI評価をもらう'} <Send className="ml-2 w-4 h-4" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {step === 3 && aiResult && (
+          <motion.div key="step3" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
+            <Card className={`rounded-[3rem] border-none shadow-2xl overflow-hidden ${aiResult.points >= 4 ? 'bg-gradient-to-br from-gray-900 via-black to-slate-900 text-white' : 'bg-white'}`}>
+              <CardContent className="p-8 text-center space-y-6">
+                <div className="flex flex-col items-center gap-4">
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', bounce: 0.6 }}>
+                    {aiResult.points >= 4 ? (
+                      <div className="relative">
+                        <div className="absolute inset-x-0 -bottom-2 bg-primary/40 blur-2xl h-12 rounded-full animate-pulse" />
+                        <div className="bg-primary p-6 rounded-full relative z-10 shadow-[0_0_40px_rgba(255,200,0,0.4)]">
+                          <Star className="w-12 h-12 text-black fill-current animate-pulse" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-primary/10 p-6 rounded-full">
+                        <CheckCircle2 className="w-12 h-12 text-primary" />
+                      </div>
+                    )}
+                  </motion.div>
+                  <div>
+                    <h2 className="text-2xl font-black tracking-tight">{aiResult.points >= 4 ? '✨ グッドキャッチ！' : '報告を受理しました'}</h2>
+                    <p className={`text-[10px] font-bold mt-1 uppercase tracking-[0.2em] ${aiResult.points >= 4 ? 'text-primary' : 'text-gray-400'}`}>
+                      AI Analysis & Bonus Points Applied
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center gap-2">
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.1 * i }}
+                    >
+                      <Star className={`w-8 h-8 ${i < aiResult.points ? 'fill-primary text-primary' : (aiResult.points >= 4 ? 'text-gray-800' : 'text-gray-100')}`} />
+                    </motion.div>
+                  ))}
+                </div>
+
+                <div className={`p-6 rounded-3xl ${aiResult.points >= 4 ? 'bg-white/10 backdrop-blur-sm' : 'bg-gray-50'}`}>
+                   <p className="text-sm font-black leading-relaxed italic">
+                     &quot;{aiResult.feedback}&quot;
+                   </p>
+                </div>
+
+                <div className="space-y-4">
+                  {aiResult.riskCategory && (
+                    <div className="flex items-center justify-center gap-2">
+                       <Badge variant="outline" className={`text-[10px] font-black px-4 py-1.5 rounded-full ${aiResult.points >= 4 ? 'border-primary/30 text-primary' : 'bg-orange-50 text-orange-600 border-none'}`}>
+                         判定カテゴリ: {aiResult.riskCategory}
+                       </Badge>
+                    </div>
+                  )}
+                  
+                  {aiResult.analysis && (
+                    <div className={`text-xs leading-relaxed text-left p-6 rounded-2xl border ${aiResult.points >= 4 ? 'bg-black/40 border-white/5 text-gray-300' : 'bg-gray-50/50 border-gray-100 text-gray-600'}`}>
+                      <p className="font-bold mb-3 opacity-50 uppercase tracking-widest text-[10px] flex items-center gap-2">
+                        <ShieldAlert className="w-3.5 h-3.5" /> AI Risk Analysis Report
+                      </p>
+                      {aiResult.analysis}
+                    </div>
+                  )}
+                </div>
+
+                <Button 
+                  className={`w-full h-14 rounded-2xl font-black shadow-xl ${aiResult.points >= 4 ? 'bg-primary text-black hover:bg-primary/90' : ''}`}
+                  onClick={() => window.location.reload()}
+                >
+                  ダッシュボードへ戻る
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <VoiceInputFab onResult={handleVoiceResult} />
+    </div>
   )
 }

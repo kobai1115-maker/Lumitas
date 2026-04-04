@@ -1,32 +1,12 @@
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/auth-helpers-nextjs'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://abc.supabase.co'
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy'
-
-// エラー回避のための安全な初期化
-function createSafeClient() {
-  try {
-    return createClient(supabaseUrl, supabaseKey)
-  } catch (e) {
-    console.warn('Supabase initialization failed, using dummy client:', e)
-    // 最小限のダミークライアントを返す（getSessionなどが呼ばれても落ちないようにする）
-    return {
-      auth: {
-        getSession: async () => ({ data: { session: null }, error: null }),
-        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-        signInWithPassword: async () => ({ data: { session: null, user: null }, error: null }),
-        signOut: async () => ({ error: null }),
-      },
-      storage: { from: () => ({}) },
-      from: () => ({
-        select: () => ({
-          order: () => ({
-            limit: () => Promise.resolve({ data: [], error: null })
-          })
-        })
-      })
-    } as unknown as ReturnType<typeof createClient>
-  }
-}
-
-export const supabase = createSafeClient()
+/**
+ * Next.js App Router 上で動作する Supabase クライアント
+ * createBrowserClient を使用することで、ブラウザの Cookie (認証情報) が管理され、
+ * API ルートやミドルウェアとの間でセッションが同期されます。
+ */
+// @ts-ignore
+export const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)

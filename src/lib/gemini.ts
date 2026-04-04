@@ -16,8 +16,7 @@ export async function convertVoiceToEvaluation(userInputText: string): Promise<G
   
   if (!apiKey || apiKey === '') {
     console.log('Gemini: Using demo mode for VoiceToEval')
-    await new Promise(r => setTimeout(r, 800))
-    
+    // デモモードロジック（そのまま維持）
     let category = '技術スキル'
     if (userInputText.includes('記録') || userInputText.includes('システム')) category = 'コンプライアンス'
     if (userInputText.includes('声') || userInputText.includes('相談') || userInputText.includes('家族')) category = 'コミュニケーション'
@@ -25,16 +24,23 @@ export async function convertVoiceToEvaluation(userInputText: string): Promise<G
     if (userInputText.includes('不穏') || userInputText.includes('転倒') || userInputText.includes('薬')) category = '安全配慮'
 
     return {
-      structuredText: `【AI解析済み】${userInputText}。この行動は${category}の向上に寄与する内容として記録されました。`,
+      structuredText: `【AI解析】${userInputText}。この行動は${category}の向上に寄与する内容として記録されました。`,
       category
     }
   }
 
   const systemPrompt = `
-あなたは福祉業界専門の人事考課AIアシスタントです。
-以下のユーザーの入力を『客観的な事実』に基づく人事考課用のテキストに変換してください。
-また、最も該当する評価項目を1つ選択してください。
-返却形式：{"structuredText": "...", "category": "..."}
+あなたは福祉・介護業界専門の人事考課AIアシスタントです。
+役割：ユーザーの不安定な音声入力テキストを、プロフェッショナルな『介護記録・人事考課用』の客観的な事実に変換してください。
+
+ルール：
+1. 「えーと」「あのー」などのフィラーを完全に除去する。
+2. 日常語を適切な介護専門用語に変換する（例：「ふらふらしていた」→「歩行不安定・不穏状態」、「薬を間違えそうになった」→「誤薬のリスクを検知」など）。
+3. 信頼性の高い、第三者が読んでも状況がわかる「客観的な文章」にする。
+4. 最も該当する評価項目を1つ選択してください（技術スキル, コミュニケーション, チームワーク, 安全配慮, コンプライアンス）。
+
+返却形式（厳守）：JSONのみ
+{"structuredText": "整形後の文章", "category": "評価項目"}
 `
   try {
     const ai = getGeminiClient()
@@ -60,54 +66,57 @@ export async function scoreIncidentReport(description: string, preventionIdea: s
   // デモ/エラー時の高度なシミュレーション
   if (!apiKey || apiKey === '') {
     console.log('Gemini: Using demo mode for IncidentScore (Detailed Analysis)')
-    await new Promise(r => setTimeout(r, 1500))
+    await new Promise(r => setTimeout(r, 1000))
     
     let points = 3
     let category = "その他（全般）"
-    let feedback = "詳細なご報告ありがとうございます。"
+    let feedback = "詳細なご報告ありがとうございます。現場の安全意識が高まっている証拠です。"
     let analysis = "現場の状況報告を確認しました。再発防止に向けた取り組みを継続してください。"
     
     const text = (description + preventionIdea).toLowerCase()
 
-    if (text.includes('転倒') || text.includes('転落') || text.includes('ふらつき') || text.includes('歩こ')) {
+    if (text.includes('転倒') || text.includes('転落')) {
       category = "転倒・転落"
       points = 4
-      feedback = "迅速な状況把握と事故防止への取り組みを高く評価します。"
-      analysis = "移乗や歩行時の動作確認、および車椅子のブレーキ、足元の整理状況を見直すことが有効です。今回の報告はチーム全体への注意喚起に活用させていただきます。"
-    } else if (text.includes('薬') || text.includes('誤飲') || text.includes('飲み間違い')) {
+    } else if (text.includes('薬') || text.includes('誤飲')) {
       category = "誤薬・誤飲"
-      points = 5
-      feedback = "誠実な事故報告を評価します。重大事項に繋がるリスクへの提言が含まれています。"
-      analysis = "二重確認の徹底や、配薬BOXの配置位置の見直しなど、システム面での改善策の実行性が高いです。ピアボーナス付与に該当します。"
-    } else if (text.includes('不穏') || text.includes('暴言') || text.includes('暴力')) {
-      category = "行動・心理症状(BPSD)"
-      points = 3
-      feedback = "対応お疲れ様です。記録を残すことが、ケアプランの改善に繋がります。"
-      analysis = "ケアの際の環境整備や、当日の利用者様のご様子、特定のトリガーがなかったか等をチームで検討していきましょう。"
+      points = 4
     }
 
-    if (text.includes('共有') || text.includes('会議') || text.includes('マニュアル')) {
-      points = Math.min(5, points + 1)
-      feedback = "組織全体の質向上に繋がる提案が含まれているため、加点しました！"
+    // 「防いだ」「気づいた」などのグッドキャッチ要素がある場合
+    if (text.includes('未然') || text.includes('防いだ') || text.includes('気づい') || text.includes('早めに')) {
+      points = 5
+      feedback = "🌟 素晴らしいグッドキャッチです！あなたの気づきが大きな事故を未然に防ぎました。チーム全員で賞賛すべき行動です。"
     }
 
     return { points, feedback, riskCategory: category, analysis }
   }
 
   const systemPrompt = `
-提出されたヒヤリハット報告を分析し、以下のJSONで返してください：
+あなたは介護現場の安全管理（リスクマネジメント）の専門家です。
+提出された「ヒヤリハット・事故・グッドキャッチ」の報告を分析し、JSONで返してください。
+
+最重要ミッション：
+「事故を未然に防いだ気づき（グッドキャッチ）」を積極的に見つけ、最大級の称賛と高いポイントを与えてください。
+
+評価基準：
+- 事故を未然に防いだ、または早期に異常に気づいた場合：4〜5点（グッドキャッチとして高く評価）
+- 具体的で実行性の高い再発防止策を提案している場合：4〜5点
+- 単なる事実報告のみの場合：2〜3点
+
+返却形式（厳守）：JSONのみ
 {
-  "points": 加点(0-5),
-  "feedback": "ポジティブな励まし",
+  "points": 0-5の数値,
+  "feedback": "ポジティブな励まし・賞賛メッセージ（50文字以内）",
   "riskCategory": "判定されたリスクカテゴリ",
-  "analysis": "具体的なリスク分析とアドバイス（150文字程度）"
+  "analysis": "具体的なリスク分析と専門的なアドバイス、または行動への賞賛（150文字程度）"
 }
 `
   try {
     const ai = getGeminiClient()
     const result = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: `${systemPrompt}\n報告: ${description}\n対策: ${preventionIdea}`
+      contents: `${systemPrompt}\n報告内容: ${description}\n対策/気づき: ${preventionIdea}`
     })
     const rawText = result.text || ''
     const jsonString = rawText.replace(/```json\n?|```\n?/g, '').trim()

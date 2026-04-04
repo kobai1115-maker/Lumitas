@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Plus, Shield, ShieldOff, ChevronDown, ChevronRight, X, Building2, UserCircle, Search, Filter, LayoutGrid, CheckCircle2, MessageSquare, FileText, Loader2, MoreHorizontal, Sparkles, Heart, Stethoscope, Briefcase } from 'lucide-react'
+import { Users, Plus, Shield, ShieldOff, ChevronDown, ChevronRight, X, Building2, UserCircle, Search, Filter, LayoutGrid, CheckCircle2, MessageSquare, FileText, Loader2, MoreHorizontal, Sparkles, Heart, Stethoscope, Briefcase, FileSpreadsheet } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,8 @@ import {
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { clsx } from 'clsx'
+import { useProfile } from '@/hooks/use-profile'
+import { StaffImportModal } from '@/components/features/admin/StaffImportModal'
 
 type Staff = {
   id: string
@@ -42,13 +44,16 @@ const ROLE_CONFIG: Record<string, { label: string, color: string, icon: any }> =
   'STAFF_OFFICE': { label: '事務職', color: 'slate', icon: Briefcase },
   'STAFF_SOCIAL_WORKER': { label: '生活相談員', color: 'orange', icon: Users },
 }
-
 export default function AdminStaffPage() {
+  const { profile, loading: authLoading, isCorpAdmin, isSystemAdmin, isFacilityManager } = useProfile()
   const [staffList, setStaffList] = useState<Staff[]>([])
+  const [facilities, setFacilities] = useState<any[]>([])
+  const [selectedFacilityId, setSelectedFacilityId] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab ] = useState('all')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // 新規登録フォーム用
@@ -60,14 +65,41 @@ export default function AdminStaffPage() {
     gradeLevel: 1,
     birthday: '',
     yearsOfService: 0,
-    experienceYears: 0
+    experienceYears: 0,
+    facilityId: ''
   })
+
+  // 施設一覧取得
+  useEffect(() => {
+    if (!authLoading && (isCorpAdmin || isSystemAdmin)) {
+      fetch('/api/admin/facilities')
+        .then(res => res.json())
+        .then(data => {
+          setFacilities(data)
+          if (data.length > 0) {
+            setSelectedFacilityId(data[0].id)
+          }
+        })
+    }
+  }, [authLoading, isCorpAdmin, isSystemAdmin])
+
+  // ログインユーザーが施設長の場合、初期値を設定
+  useEffect(() => {
+    if (!authLoading && isFacilityManager && profile?.facilityId) {
+      setSelectedFacilityId(profile.facilityId)
+    }
+  }, [authLoading, isFacilityManager, profile])
 
   // データ取得関数
   async function fetchStaff() {
+    if (!selectedFacilityId && !isSystemAdmin) return
+    
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/staff')
+      const url = selectedFacilityId 
+        ? `/api/admin/staff?facilityId=${selectedFacilityId}`
+        : '/api/admin/staff'
+      const res = await fetch(url)
       if (res.ok) {
         const data = await res.json()
         setStaffList(data)
@@ -82,7 +114,14 @@ export default function AdminStaffPage() {
 
   useEffect(() => {
     fetchStaff()
-  }, [])
+  }, [selectedFacilityId])
+
+  // フォーム初期化 (ダイアログ開く時)
+  useEffect(() => {
+    if (isAddDialogOpen && selectedFacilityId) {
+      setFormData(prev => ({ ...prev, facilityId: selectedFacilityId }))
+    }
+  }, [isAddDialogOpen, selectedFacilityId])
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -106,7 +145,8 @@ export default function AdminStaffPage() {
           gradeLevel: 1,
           birthday: '',
           yearsOfService: 0,
-          experienceYears: 0
+          experienceYears: 0,
+          facilityId: selectedFacilityId
         })
         fetchStaff() // リスト更新
       } else {
@@ -126,11 +166,13 @@ export default function AdminStaffPage() {
     return matchesSearch && matchesTab
   })
 
-  if (loading) {
+  if (authLoading || (loading && staffList.length === 0)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
-        <p className="text-[10px] font-black text-gray-400 tracking-widest">スタッフデータを読み込み中...</p>
+        <p className="text-[10px] font-black text-gray-400 tracking-widest uppercase">
+          {authLoading ? 'プロファイルを読込中...' : 'スタッフデータを同期中...'}
+        </p>
       </div>
     )
   }
@@ -146,10 +188,39 @@ export default function AdminStaffPage() {
              </div>
              <div>
                 <h1 className="text-4xl font-black tracking-tight text-gray-900 leading-none mb-2">スタッフ管理</h1>
-                <p className="text-xs font-black text-gray-300 uppercase tracking-widest">社会福祉法人 萌佑会 | 統合管理システム</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-black text-gray-300 uppercase tracking-widest">
+                    {isSystemAdmin ? '全法人横断管理コンソール' : profile?.corporationName || '法人管理者モード'}
+                  </p>
+                  {selectedFacilityId && (
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black text-[9px] px-2 py-0">
+                      {isFacilityManager ? profile?.facilityName : facilities.find(f => f.id === selectedFacilityId)?.name || '全施設'}
+                    </Badge>
+                  )}
+                </div>
              </div>
           </div>
         </div>
+
+        {/* 施設セレクター (管理者用) */}
+        {(isCorpAdmin || isSystemAdmin) && facilities.length > 1 && (
+          <div className="flex flex-col gap-1.5 min-w-[200px]">
+            <Label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">対象施設の切り替え</Label>
+            <div className="relative group">
+              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-hover:text-primary" />
+              <select 
+                className="w-full h-12 pl-11 pr-10 rounded-xl border-none bg-white shadow-md font-bold text-xs appearance-none focus:ring-2 focus:ring-primary/20"
+                value={selectedFacilityId}
+                onChange={e => setSelectedFacilityId(e.target.value)}
+              >
+                {facilities.map(f => (
+                  <option key={f.id} value={f.id}>{f.name} {isSystemAdmin ? `(${f.corporation?.name})` : ''}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+            </div>
+          </div>
+        )}
         
         <div className="flex items-center gap-4">
           <div className="relative w-full md:w-80 group">
@@ -161,6 +232,14 @@ export default function AdminStaffPage() {
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
+          <Button 
+            variant="outline" 
+            className="h-14 px-6 rounded-2xl border-gray-100 bg-white font-bold hover:bg-gray-50 flex items-center gap-2 group transition-all"
+            onClick={() => setIsImportModalOpen(true)}
+          >
+            <FileSpreadsheet className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
+            Excel一括登録
+          </Button>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger 
               render={
@@ -190,15 +269,18 @@ export default function AdminStaffPage() {
                 <div className="p-8 space-y-6">
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="staffId" className="text-xs font-black text-gray-400 uppercase tracking-widest pl-1">職員ID</Label>
+                        <Label htmlFor="staffId" className="text-xs font-black text-gray-400 uppercase tracking-widest pl-1">職員ID (7桁)</Label>
                         <Input 
                           id="staffId" 
-                          placeholder="例: S005" 
+                          placeholder="例: 1aa0001" 
                           required
+                          minLength={7}
+                          maxLength={7}
                           className="rounded-xl border-gray-100 h-12 font-bold focus:ring-primary/10"
                           value={formData.staffId}
                           onChange={e => setFormData({...formData, staffId: e.target.value})}
                         />
+                        <p className="text-[10px] text-gray-400 font-bold pl-1">※種別1桁 + 法人2桁 + 職員番号4桁</p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="fullName" className="text-xs font-black text-gray-400 uppercase tracking-widest pl-1">氏名</Label>
@@ -449,6 +531,12 @@ export default function AdminStaffPage() {
           )}
         </div>
       </Tabs>
+
+      <StaffImportModal 
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={fetchStaff}
+      />
     </div>
   )
 }

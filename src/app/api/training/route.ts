@@ -1,18 +1,38 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { getServerAuthUser } from '@/lib/auth-server'
 
 
 
 // 研修参加記録の取得
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const userId = searchParams.get('userId') || 'demo-user-id'
+    const { user, error } = await getServerAuthUser()
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    const records = await prisma.trainingRecord.findMany({
-      where: { userId },
+    const { searchParams } = new URL(req.url)
+    const targetUserId = searchParams.get('userId') || user.id
+
+    // [権限管理] 他人のデータ閲覧チェック
+    if (targetUserId !== user.id && user.role !== 'ADMIN') {
+      if (user.role === 'MANAGER') {
+        const targetUser = await (prisma.user as any).findFirst({
+          where: { id: targetUserId, corporationId: user.corporationId, facilityId: user.facilityId }
+        })
+        if (!targetUser) {
+          return NextResponse.json({ error: '他施設の職員の研修記録は閲覧できません' }, { status: 403 })
+        }
+      } else {
+        return NextResponse.json({ error: '自分の研修記録以外の閲覧は禁止されています' }, { status: 403 })
+      }
+    }
+
+    const records = await (prisma.trainingRecord as any).findMany({
+      where: { userId: targetUserId, corporationId: user.corporationId },
       include: {
-        user: { select: { fullName: true, department: true } },
+        user: { select: { fullName: true, department: true, staffId: true } },
       },
       orderBy: { date: 'desc' }
     })
@@ -26,26 +46,55 @@ export async function GET(req: Request) {
 // 研修記録の保存・ポイント付与
 export async function POST(req: Request) {
   try {
-    const { userId, title, type, date, hours, reportContent, imageUrl } = await req.json()
+    const { user: currentUser, error: authError } = await getServerAuthUser()
+    if (authError || !currentUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    if (!userId || !title || !type || !date || !hours) {
+    const { userId: requestedUserId, title, type, date, hours, reportContent, imageUrl, isLecturer } = await req.json()
+    const targetUserId = requestedUserId || currentUser.id
+
+    if (!targetUserId || !title || !type || !date || !hours) {
       return NextResponse.json({ error: '必須項目が不足しています' }, { status: 400 })
     }
 
-    // OJT/OffJTによるポイント設定（仮のロジック: OJT 5pt, OFF_JT 10pt）
-    const earnedPoints = type === 'OFF_JT' || type === 'BOOK' ? 10 : 5
+    // [権限管理] 登録権限チェック
+    if (targetUserId !== currentUser.id && currentUser.role !== 'ADMIN') {
+      if (currentUser.role === 'MANAGER') {
+        const targetUser = await (prisma.user as any).findFirst({
+          where: { id: targetUserId, corporationId: currentUser.corporationId, facilityId: currentUser.facilityId }
+        })
+        if (!targetUser) {
+          return NextResponse.json({ error: '他施設の職員の研修記録を登録する権限がありません' }, { status: 403 })
+        }
+      } else {
+        return NextResponse.json({ error: '自分以外の研修記録を登録する権限がありません' }, { status: 403 })
+      }
+    }
+
+    // ポイント設定... (略)
+    let earnedPoints = 5
+    if (type === 'PRO_ORG_OFFICER') {
+      earnedPoints = 30
+    } else if (type === 'OFF_JT' || type === 'BOOK') {
+      earnedPoints = isLecturer ? 30 : 10
+    } else {
+      earnedPoints = isLecturer ? 20 : 5
+    }
 
     // 1. 研修記録を作成
-    const record = await prisma.trainingRecord.create({
+    const record = await (prisma.trainingRecord as any).create({
       data: {
-        corporationId: 'corp-001',
-        userId,
+        corporationId: currentUser.corporationId,
+        facilityId: currentUser.facilityId, // 現在の所属施設をセット
+        userId: targetUserId,
         title,
         type,
         date: new Date(date),
         hours: parseFloat(hours),
         reportContent: reportContent || null,
         earnedPoints,
+        isLecturer: !!isLecturer,
         pointsGranted: false,
         imageUrl: imageUrl || null,
       }
@@ -53,13 +102,13 @@ export async function POST(req: Request) {
 
     // 2. 本人にポイント付与（二重付与防止）
     if (!record.pointsGranted) {
-      await prisma.user.update({
-        where: { id: userId },
+      await (prisma.user as any).update({
+        where: { id: targetUserId },
         data: { welfarePoints: { increment: record.earnedPoints } }
       })
 
       // 付与済みフラグを立てる
-      await prisma.trainingRecord.update({
+      await (prisma.trainingRecord as any).update({
         where: { id: record.id },
         data: { pointsGranted: true }
       })

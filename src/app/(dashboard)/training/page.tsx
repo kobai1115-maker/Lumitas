@@ -12,11 +12,12 @@ import { clsx } from 'clsx'
 type TrainingRecord = {
   id: string
   title: string
-  type: 'OJT' | 'OFF_JT' | 'BOOK'
+  type: 'OJT' | 'OFF_JT' | 'BOOK' | 'PRO_ORG_OFFICER'
   date: string
   hours: number
   reportContent: string | null
   earnedPoints: number
+  isLecturer: boolean
   pointsGranted: boolean
   imageUrl?: string | null
 }
@@ -29,7 +30,8 @@ export default function TrainingPage() {
 
   // Form states
   const [title, setTitle] = useState('')
-  const [type, setType] = useState<'OJT' | 'OFF_JT' | 'BOOK'>('OJT')
+  const [type, setType] = useState<'OJT' | 'OFF_JT' | 'BOOK' | 'PRO_ORG_OFFICER'>('OJT')
+  const [isLecturer, setIsLecturer] = useState(false)
   const [date, setDate] = useState('')
   const [hours, setHours] = useState('1')
   const [reportContent, setReportContent] = useState('')
@@ -84,6 +86,7 @@ export default function TrainingPage() {
           userId,
           title,
           type,
+          isLecturer,
           date,
           hours,
           reportContent,
@@ -99,6 +102,7 @@ export default function TrainingPage() {
         setReportContent('')
         setDate('')
         setHours('1')
+        setIsLecturer(false)
         setImage(null)
         setImagePreview(null)
       } else {
@@ -125,7 +129,7 @@ export default function TrainingPage() {
             研修参加記録
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            内部研修（OJT）および外部研修（OffJT）の参加履歴と獲得ポイント
+            研修（OJT/OffJT）や職能団体活動の参加履歴と獲得ポイント
           </p>
         </div>
 
@@ -160,12 +164,19 @@ export default function TrainingPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">種別</label>
                   <select
                     value={type}
-                    onChange={(e) => setType(e.target.value as 'OJT' | 'OFF_JT' | 'BOOK')}
+                    onChange={(e) => {
+                      const newType = e.target.value as 'OJT' | 'OFF_JT' | 'BOOK' | 'PRO_ORG_OFFICER'
+                      setType(newType)
+                      if (newType === 'PRO_ORG_OFFICER' || newType === 'BOOK') {
+                        setIsLecturer(false)
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
-                    <option value="OJT">OJT (内部研修・5pt)</option>
-                    <option value="OFF_JT">Off-JT (外部研修・10pt)</option>
+                    <option value="OJT">OJT (内部研修・5pt~)</option>
+                    <option value="OFF_JT">Off-JT (外部研修・10pt~)</option>
                     <option value="BOOK">読書記録 (Off-JT・10pt)</option>
+                    <option value="PRO_ORG_OFFICER">職能団体役員活動 (30pt)</option>
                   </select>
                 </div>
                 <div>
@@ -181,6 +192,20 @@ export default function TrainingPage() {
                   />
                 </div>
               </div>
+              {(type === 'OJT' || type === 'OFF_JT') && (
+                <div className="flex items-center gap-2 px-1">
+                  <input
+                    type="checkbox"
+                    id="isLecturer"
+                    checked={isLecturer}
+                    onChange={(e) => setIsLecturer(e.target.checked)}
+                    className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                  />
+                  <label htmlFor="isLecturer" className="text-sm font-medium text-gray-700 cursor-pointer">
+                    講師として登壇・指導した
+                  </label>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {type === 'BOOK' ? '読書日数 (d)' : '研修時間 (h)'}
@@ -273,10 +298,16 @@ export default function TrainingPage() {
                             "px-2 py-0.5 rounded text-xs font-bold",
                             r.type === 'OJT' && "bg-blue-100 text-blue-700",
                             r.type === 'OFF_JT' && "bg-orange-100 text-orange-700",
-                            r.type === 'BOOK' && "bg-emerald-100 text-emerald-700"
+                            r.type === 'BOOK' && "bg-emerald-100 text-emerald-700",
+                            r.type === 'PRO_ORG_OFFICER' && "bg-purple-100 text-purple-700"
                           )}>
-                            {r.type === 'OJT' ? '内部 OJT' : r.type === 'OFF_JT' ? '外部 Off-JT' : '読書 Off-JT'}
+                            {r.type === 'OJT' ? '内部 OJT' : r.type === 'OFF_JT' ? '外部 Off-JT' : r.type === 'BOOK' ? '読書 Off-JT' : '職能団体役員'}
                           </span>
+                          {r.isLecturer && (
+                            <span className="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">
+                              講師
+                            </span>
+                          )}
                           <span className="text-xs text-gray-500">
                             {new Date(r.date).toLocaleDateString('ja-JP')}
                           </span>

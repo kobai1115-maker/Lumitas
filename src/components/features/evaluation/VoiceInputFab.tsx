@@ -5,15 +5,16 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Mic, Square, Loader2, Sparkles, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export default function VoiceInputFab() {
+type VoiceInputFabProps = {
+  onResult?: (text: string, category: string) => void
+}
+
+export default function VoiceInputFab({ onResult }: VoiceInputFabProps) {
   const [isRecording, setIsRecording] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [resultText, setResultText] = useState('')
   const [resultCategory, setResultCategory] = useState('')
   
-  // 実際にはWeb Speech API等で音声を拾うが、今回はモックとしてタイマー処理
-  // 実際にはWeb Speech API等で音声を拾うが、今回はモックとしてタイマー処理
-
   const handleToggleRecord = async () => {
     if (isRecording) {
       // 録音停止＆処理開始
@@ -21,8 +22,8 @@ export default function VoiceInputFab() {
       setIsProcessing(true)
       
       try {
-        // 仮の録音テキスト (実際はSpeech-to-Text API等の結果)
-        const mockVoiceText = 'えーと、今日午前中にAさんが転倒しそうになったとき、すぐに駆け寄って支えたので怪我はありませんでした。ヒヤリハットの報告書ももう出してます。'
+        // 現実的な録音テキスト例
+        const mockVoiceText = 'えーと、今日10時ごろ、B様がトイレに行こうとして立ち上がった際、足元がふらついて転倒しそうになりました。すぐに支えたので怪我はありませんでした。車椅子のブレーキが甘かったかもしれないので点検しました。'
         
         // API呼び出し (Geminiで客観的な評価文に変換)
         const res = await fetch('/api/ai/voice-to-eval', {
@@ -39,7 +40,7 @@ export default function VoiceInputFab() {
         }
       } catch (e) {
         console.error(e)
-        setResultText('ネットワークエラーが発生しました。再試行してください。')
+        setResultText('エラーが発生しました。再試行してください。')
       } finally {
         setIsProcessing(false)
       }
@@ -48,6 +49,13 @@ export default function VoiceInputFab() {
       setIsRecording(true)
       setResultText('')
       setResultCategory('')
+    }
+  }
+
+  const handleApply = () => {
+    if (onResult && resultText) {
+      onResult(resultText, resultCategory)
+      setResultText('')
     }
   }
 
@@ -129,8 +137,8 @@ export default function VoiceInputFab() {
               <Button variant="outline" className="flex-1 text-xs" onClick={() => setResultText('')}>
                 再録音
               </Button>
-              <Button className="flex-1 text-xs gap-1 shadow-sm font-bold">
-                <Check className="w-4 h-4" /> 記録として保存
+              <Button className="flex-1 text-xs gap-1 shadow-sm font-bold" onClick={handleApply}>
+                <Check className="w-4 h-4" /> この内容で入力
               </Button>
             </div>
           </motion.div>

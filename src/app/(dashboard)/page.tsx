@@ -8,6 +8,7 @@ import { CalendarDays, ChevronDown, History } from 'lucide-react'
 
 import ProgressOverview from '@/components/features/dashboard/ProgressOverview'
 import RoleBasedWidgets from '@/components/features/dashboard/RoleBasedWidgets'
+import { useProfile } from '@/hooks/use-profile'
 
 // 年度ごとのモックデータ定義 (蓄積のシミュレーション)
 const YEARLY_DATA: Record<string, { metrics: DashboardMetrics, scoreData: ScoringResult }> = {
@@ -26,30 +27,14 @@ const YEARLY_DATA: Record<string, { metrics: DashboardMetrics, scoreData: Scorin
 }
 
 export default function DashboardPage() {
-  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const { profile, loading } = useProfile()
   const [fiscalYear, setFiscalYear] = useState('2024')
   const [isYearSelectorOpen, setIsYearSelectorOpen] = useState(false)
 
   // 選択中の年度のデータを取得
   const currentData = YEARLY_DATA[fiscalYear] || YEARLY_DATA['2024']
 
-  useEffect(() => {
-    // 開発環境用の既定プロフィール設定 (本来はDBからIDで検索)
-    setProfile({
-      id: 'u1',
-      email: 'yamada@example.com',
-      fullName: '山田 理事長',
-      role: 'ADMIN',
-      positionId: 'p1',
-      positionName: '理事長',
-      departmentId: 'd1',
-      departmentName: '役員会',
-      gradeLevel: 7,
-      welfarePoints: 1250,
-    })
-  }, [fiscalYear])
-
-  if (!profile) {
+  if (loading || !profile) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-pulse text-gray-500 font-bold tracking-widest text-xs uppercase">データを読み込んでいます...</div>
@@ -72,7 +57,7 @@ export default function DashboardPage() {
             こんにちは、{profile.fullName} さん
           </h1>
           <div className="flex items-center gap-3 text-sm font-bold text-gray-400">
-            <span className="px-2 py-0.5 bg-gray-100 rounded-lg text-gray-500">{profile.departmentName}</span>
+            <span className="px-2 py-0.5 bg-gray-100 rounded-lg text-gray-500">{profile.unitName || profile.department}</span>
             <span>等級: {profile.gradeLevel}</span>
           </div>
         </div>
