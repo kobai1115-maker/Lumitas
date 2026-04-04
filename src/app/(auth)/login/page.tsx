@@ -75,7 +75,7 @@ export default function LoginPage() {
             <Leaf className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">ルミタス (Lumitas)</h1>
-          <p className="text-sm font-medium text-gray-500 mt-2">社会福祉法人向け 人事考課システム</p>
+          <p className="text-sm font-medium text-gray-500 mt-2">介護・医療・福祉事業所職員評価統合管理システム</p>
         </div>
 
         <Card className="shadow-lg border-primary/20">
