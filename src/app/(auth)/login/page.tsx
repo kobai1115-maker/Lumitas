@@ -31,7 +31,7 @@ export default function LoginPage() {
         // セッションをローカルストレージやCookie等で「ログイン済み」に見せかける処理も可能ですが、
         // 今回はそのままダッシュボードへ遷移することを許可します。
         // （本来はsupabase.auth.signInでセッションを得る必要がありますが、デモ用に許可）
-        router.push('/')
+        router.push('/dashboard')
         return
       }
 
@@ -49,7 +49,7 @@ export default function LoginPage() {
 
       if (data.session) {
         // ログイン成功時にダッシュボードへ遷移
-        router.push('/')
+        router.push('/dashboard')
       }
     } catch (error) {
       if (error instanceof Error) {

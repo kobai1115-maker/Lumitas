@@ -62,7 +62,7 @@ export default function DashboardLayout({
 
   // ボトムナビゲーションの定義 (モバイルファースト)
   const navItems = [
-    { name: 'ホーム',       href: '/',           icon: Home },
+    { name: 'ホーム',       href: '/dashboard',           icon: Home },
     { name: '目標',         href: '/goals',       icon: Target },
     { name: 'AI評価',       href: '/evaluation',  icon: Mic },
     { name: 'サンクスバッジ', href: '/peer-bonus',  icon: Award },
@@ -96,7 +96,7 @@ export default function DashboardLayout({
         <div className="flex flex-col h-full">
           {/* ロゴエリア */}
           <div className="p-6 border-b border-gray-100 mb-2">
-            <Link href="/" className="flex items-center gap-2.5 text-primary font-black text-xl tracking-tighter hover:opacity-80 transition-opacity">
+            <Link href="/dashboard" className="flex items-center gap-2.5 text-primary font-black text-xl tracking-tighter hover:opacity-80 transition-opacity">
               <Sparkles className="w-6 h-6" />
               ルミタス <span className="text-[10px] bg-primary/5 px-1.5 py-0.5 rounded-md font-bold align-middle ml-1">第2版</span>
             </Link>
@@ -170,7 +170,7 @@ export default function DashboardLayout({
 
       <div className="flex-1 md:pl-64 flex flex-col min-h-screen">
         <header className="md:hidden sticky top-0 z-30 flex items-center justify-between bg-white/90 backdrop-blur-md border-b px-4 py-3 h-14">
-          <Link href="/" className="flex items-center gap-2 text-primary font-bold text-lg tracking-tight">
+          <Link href="/dashboard" className="flex items-center gap-2 text-primary font-bold text-lg tracking-tight">
             <Sparkles className="w-5 h-5" /> ルミタス (Lumitas)
           </Link>
           <button onClick={handleLogout} className="p-2 text-gray-400">
