@@ -339,7 +339,7 @@ export default function LandingPage() {
             </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">
-            © 2026 Lumitas. All Rights Reserved.
+            © 2026 AXLINK. All Rights Reserved.
         </div>
       </footer>
     </div>
