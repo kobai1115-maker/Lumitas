@@ -1,14 +1,29 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-
-const CORP_ID = 'corp-001' // 暫定固定
+import { getServerAuthUser } from '@/lib/auth-server'
 
 // 1. 組織ツリーの取得
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { user, error } = await getServerAuthUser()
+    if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // 権限チェック：SYSTEM_ADMIN または ADMIN/MANAGER 以上
+    if (!['SYSTEM_ADMIN', 'ADMIN', 'MANAGER'].includes(user.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // SYSTEM_ADMIN の場合はクエリパラメータから法人IDを取得可能にする
+    const { searchParams } = new URL(req.url)
+    const targetCorpId = (user.role === 'SYSTEM_ADMIN' ? searchParams.get('corporationId') : null) || user.corporationId
+
+    if (!targetCorpId) {
+      return NextResponse.json({ error: '法人IDが指定されていません' }, { status: 400 })
+    }
+
     // 法人 ＞ 部 ＞ 事業所 ＞ ユニット の親子関係をすべてインクルード
     const corporation = await prisma.corporation.findUnique({
-      where: { id: CORP_ID },
+      where: { id: targetCorpId },
       include: {
         divisions: {
           include: {
@@ -42,16 +57,28 @@ export async function GET() {
 // 2. 組織データの一括登録・更新 (Excelインポート対応)
 export async function POST(req: Request) {
   try {
-    const { items } = await req.json()
-    // items: Array<{ divisionName: string, facilityName: string, unitName: string }>
+    const { user, error } = await getServerAuthUser()
+    if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // 管理権限チェック
+    if (user.role !== 'SYSTEM_ADMIN' && user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { items, corporationId: customCorpId } = await req.json()
     
+    // 対象法人IDの決定
+    const targetCorpId = (user.role === 'SYSTEM_ADMIN' ? customCorpId : null) || user.corporationId
+    if (!targetCorpId) {
+      return NextResponse.json({ error: '法人IDが不明です' }, { status: 400 })
+    }
+
     if (!Array.isArray(items)) {
       return NextResponse.json({ error: '無効なデータ形式です' }, { status: 400 })
     }
 
-    console.log(`📦 ${items.length} 件の組織データを処理します...`)
+    console.log(`📦 法人 ${targetCorpId} の組織データ ${items.length} 件を処理します...`)
 
-    // 大がかりな変更のため、一件ずつ丁寧に整合性をチェックしながら作成/更新
     const results = {
       divisions: 0,
       facilities: 0,
@@ -66,13 +93,13 @@ export async function POST(req: Request) {
       let currentDivisionId: string | null = null
       if (divisionName) {
         const existingDiv = await prisma.division.findFirst({
-          where: { name: divisionName, corporationId: CORP_ID }
+          where: { name: divisionName, corporationId: targetCorpId }
         })
         if (existingDiv) {
           currentDivisionId = existingDiv.id
         } else {
           const newDiv = await prisma.division.create({
-            data: { name: divisionName, corporationId: CORP_ID }
+            data: { name: divisionName, corporationId: targetCorpId }
           })
           currentDivisionId = newDiv.id
           results.divisions++
@@ -82,11 +109,10 @@ export async function POST(req: Request) {
       // 2. 事業所 (Facility)
       let currentFacilityId: string | null = null
       const existingFac = await prisma.facility.findFirst({
-        where: { name: facilityName, corporationId: CORP_ID, divisionId: currentDivisionId }
+        where: { name: facilityName, corporationId: targetCorpId, divisionId: currentDivisionId }
       })
       if (existingFac) {
         currentFacilityId = existingFac.id
-        // 部門の紐付けが変わっている可能性を考慮して更新
         await prisma.facility.update({
           where: { id: currentFacilityId },
           data: { divisionId: currentDivisionId }
@@ -95,7 +121,7 @@ export async function POST(req: Request) {
         const newFac = await prisma.facility.create({
           data: { 
             name: facilityName, 
-            corporationId: CORP_ID, 
+            corporationId: targetCorpId, 
             divisionId: currentDivisionId 
           }
         })

@@ -44,6 +44,10 @@ model Corporation {
   subdomain    String?  @unique
   subscription String   @default("FREE")
   isActive     Boolean  @default(true)
+  address          String?
+  phoneNumber      String?
+  representativeName String?
+  email            String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -74,6 +78,9 @@ model Facility {
   corporation   Corporation @relation(fields: [corporationId], references: [id])
   divisionId    String?
   division      Division?   @relation(fields: [divisionId], references: [id])
+  address       String?
+  phoneNumber   String?
+  email         String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 

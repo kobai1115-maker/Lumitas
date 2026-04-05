@@ -40,6 +40,21 @@ export async function getServerAuthUser() {
 
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
+    // [開発用バイパス] デベロッパー用クッキーがある場合はモックユーザーを返す
+    const devSession = cookieStore.get('axlink_dev_session')?.value
+    if (devSession === 'SYSTEM_ADMIN') {
+      return { 
+        user: { 
+          id: 'dev-master', 
+          staffId: 'developer', 
+          fullName: '開発者特権アカウント', 
+          role: 'SYSTEM_ADMIN',
+          corporationId: null 
+        }, 
+        error: null 
+      }
+    }
+
     if (sessionError || !session || !session.user) {
       return { user: null, error: 'Unauthorized' }
     }

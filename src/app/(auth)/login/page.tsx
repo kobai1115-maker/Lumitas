@@ -25,13 +25,21 @@ export default function LoginPage() {
     setErrorText('')
 
     try {
-      // 1. 特別な「admin」アカウントのバイパス（開発時用）
-      if (staffId === 'admin' && password === '12345678') {
+      const cleanStaffId = staffId.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, '')
+      const cleanPassword = password.trim().toLowerCase()
+
+      // 1. 特別な「admin」「developer」アカウントのバイパス（開発時用）
+      if (cleanStaffId === 'admin' && password.trim() === '12345678') {
         console.warn('Developer bypass: Logging in as admin')
-        // セッションをローカルストレージやCookie等で「ログイン済み」に見せかける処理も可能ですが、
-        // 今回はそのままダッシュボードへ遷移することを許可します。
-        // （本来はsupabase.auth.signInでセッションを得る必要がありますが、デモ用に許可）
         router.push('/dashboard')
+        return
+      }
+
+      if (cleanStaffId === 'developer' && cleanPassword === 'axlink2026') {
+        console.warn('System Admin bypass: Logging in as developer')
+        // クッキーをセットしてサーバーサイドでも SYSTEM_ADMIN として認識させる
+        document.cookie = "axlink_dev_session=SYSTEM_ADMIN; path=/; max-age=3600"
+        router.push('/admin/system')
         return
       }
 
