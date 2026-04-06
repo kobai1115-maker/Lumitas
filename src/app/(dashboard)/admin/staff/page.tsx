@@ -65,8 +65,7 @@ export default function AdminStaffPage() {
   const [filters, setFilters] = useState({
     role: 'all',
     department: 'all',
-    gradeLevel: 'all',
-    year: getFiscalYear().toString()
+    gradeLevel: 'all'
   })
 
   // 新規登録フォーム用
@@ -90,11 +89,14 @@ export default function AdminStaffPage() {
       fetch('/api/admin/facilities')
         .then(res => res.json())
         .then(data => {
-          setFacilities(data)
-          if (data.length > 0 && !selectedFacilityId) {
-            setSelectedFacilityId(data[0].id)
+          if (Array.isArray(data)) {
+            setFacilities(data)
+            if (data.length > 0 && !selectedFacilityId) {
+              setSelectedFacilityId(data[0].id)
+            }
           }
         })
+        .catch(() => {})
     }
   }, [authLoading, isCorpAdmin, isSystemAdmin])
 
@@ -105,7 +107,10 @@ export default function AdminStaffPage() {
   }, [authLoading, isFacilityManager, profile])
 
   async function fetchStaff() {
-    if (!selectedFacilityId && !isSystemAdmin) return
+    if (!selectedFacilityId && !isSystemAdmin) {
+       setLoading(false)
+       return
+    }
     setLoading(true)
     try {
       const url = selectedFacilityId 
@@ -113,7 +118,8 @@ export default function AdminStaffPage() {
         : '/api/admin/staff'
       const res = await fetch(url)
       if (res.ok) {
-        setStaffList(await res.json())
+        const data = await res.json()
+        setStaffList(Array.isArray(data) ? data : [])
       }
     } catch (err) {
       toast.error('データの取得に失敗しました')
@@ -158,21 +164,25 @@ export default function AdminStaffPage() {
   }
 
   const filteredStaff = useMemo(() => {
+    if (!Array.isArray(staffList)) return []
     return staffList.filter(s => {
       const matchesSearch = !searchTerm || 
-        s.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        s.staffId.includes(searchTerm) || 
-        s.department.includes(searchTerm)
+        (s.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (s.staffId || '').includes(searchTerm) || 
+        (s.department || '').includes(searchTerm)
       
       const matchesRole = filters.role === 'all' || s.role === filters.role
       const matchesDept = filters.department === 'all' || s.department === filters.department
-      const matchesGrade = filters.gradeLevel === 'all' || s.gradeLevel.toString() === filters.gradeLevel
+      const matchesGrade = filters.gradeLevel === 'all' || String(s.gradeLevel || '') === filters.gradeLevel
       
       return matchesSearch && matchesRole && matchesDept && matchesGrade
     })
   }, [staffList, searchTerm, filters])
 
-  const departments = useMemo(() => Array.from(new Set(staffList.map(s => s.department))), [staffList])
+  const departments = useMemo(() => {
+     if (!Array.isArray(staffList)) return []
+     return Array.from(new Set(staffList.map(s => s.department || '未設定')))
+  }, [staffList])
 
   if (authLoading) return null
 
@@ -305,7 +315,7 @@ export default function AdminStaffPage() {
               
               <div className="h-8 w-px bg-gray-100 mx-2 hidden lg:block" />
 
-              {(isCorpAdmin || isSystemAdmin) && (
+              {(isCorpAdmin || isSystemAdmin) && Array.isArray(facilities) && facilities.length > 0 && (
                 <div className="flex items-center px-4 h-12 bg-gray-50/50 rounded-xl border border-gray-100">
                   <Building2 className="w-4 h-4 text-gray-400 mr-2" />
                   <select 
@@ -348,7 +358,7 @@ export default function AdminStaffPage() {
                     options={[{ label: 'すべて', value: 'all' }, ...Array.from({length:7}, (_,i)=>({label:`${i+1}等級`, value:(i+1).toString()}))]}
                   />
                   <div className="ml-auto flex items-end">
-                    <Button variant="ghost" className="text-[10px] font-black text-primary" onClick={() => setFilters({role:'all', department:'all', gradeLevel:'all', year: '2026'})}>
+                    <Button variant="ghost" className="text-[10px] font-black text-primary" onClick={() => setFilters({role:'all', department:'all', gradeLevel:'all'})}>
                       リセット
                     </Button>
                   </div>
@@ -369,7 +379,7 @@ export default function AdminStaffPage() {
               <Search className="w-10 h-10 text-gray-200" />
             </div>
             <h3 className="text-xl font-black text-gray-300">検索条件に一致する職員がいません</h3>
-            <Button variant="link" className="mt-2 text-primary font-bold" onClick={() => { setSearchTerm(''); setFilters({role:'all', department:'all', gradeLevel:'all', year: '2026'}); }}>
+            <Button variant="link" className="mt-2 text-primary font-bold" onClick={() => { setSearchTerm(''); setFilters({role:'all', department:'all', gradeLevel:'all'}); }}>
               検索条件をすべてクリア
             </Button>
           </div>
@@ -418,7 +428,7 @@ function FilterGroup({ label, value, options, onChange }: { label: string, value
 }
 
 function StaffCard({ staff, index }: { staff: Staff, index: number }) {
-  const roleInfo = ROLE_CONFIG[staff.role] || { label: staff.role, icon: Users, color: 'gray', bg: 'bg-gray-50', text: 'text-gray-500' }
+  const roleInfo = ROLE_CONFIG[staff.role] || { label: staff.role || '未設定', icon: Users, color: 'gray', bg: 'bg-gray-50', text: 'text-gray-500' }
   const RoleIcon = roleInfo.icon
 
   return (
@@ -433,7 +443,7 @@ function StaffCard({ staff, index }: { staff: Staff, index: number }) {
           <div className="flex items-start justify-between mb-6">
             <div className="relative">
               <div className="w-16 h-16 bg-gray-50 rounded-[1.5rem] flex items-center justify-center font-black text-2xl text-gray-200 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500">
-                {staff.fullName.charAt(0)}
+                {(staff.fullName || '?').charAt(0)}
               </div>
               <div className={clsx("absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center border-2 border-white", roleInfo.text)}>
                 <RoleIcon className="w-3.5 h-3.5" />
@@ -443,22 +453,22 @@ function StaffCard({ staff, index }: { staff: Staff, index: number }) {
                <Badge className={clsx("mb-2 border-none font-black text-[9px] uppercase tracking-tighter", roleInfo.bg, roleInfo.text)}>
                 {roleInfo.label}
               </Badge>
-              <p className="text-[10px] font-black text-gray-300 tracking-wider">ID: {staff.staffId}</p>
+              <p className="text-[10px] font-black text-gray-300 tracking-wider">ID: {staff.staffId || '-'}</p>
             </div>
           </div>
 
           <div className="mb-8">
             <h3 className="text-xl font-black text-gray-900 group-hover:text-primary transition-colors mb-2">
-              {staff.fullName}
+              {staff.fullName || '名前未登録'}
             </h3>
             <div className="flex flex-wrap gap-1.5">
                <span className="flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-md">
                 <Building2 className="w-3 h-3" />
-                {staff.department}
+                {staff.department || '部署未設定'}
               </span>
               <span className="flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-md">
                 <GraduationCap className="w-3 h-3" />
-                {staff.gradeLevel}等級
+                {staff.gradeLevel || 0}等級
               </span>
             </div>
           </div>
@@ -470,7 +480,7 @@ function StaffCard({ staff, index }: { staff: Staff, index: number }) {
             </div>
              <div className="text-right">
               <p className="text-[9px] font-black text-gray-300 uppercase mb-1">累計PT</p>
-              <p className="text-lg font-black text-primary leading-none">{staff.welfarePoints.toLocaleString()}<span className="text-[10px] ml-1">pt</span></p>
+              <p className="text-lg font-black text-primary leading-none">{(staff.welfarePoints || 0).toLocaleString()}<span className="text-[10px] ml-1">pt</span></p>
             </div>
           </div>
         </div>
