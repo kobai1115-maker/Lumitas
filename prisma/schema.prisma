@@ -123,6 +123,7 @@ model User {
   birthday           DateTime?
   yearsOfService     Int       @default(0)
   experienceYears    Int       @default(0)
+  hireDate           DateTime?
   welfarePoints      Int       @default(0)
   isActive           Boolean   @default(true)
   mustChangePassword Boolean   @default(true)

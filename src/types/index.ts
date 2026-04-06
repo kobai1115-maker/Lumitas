@@ -58,6 +58,7 @@ export type UserProfile = {
   gradeLevel: number
   experienceYears: number
   yearsOfService: number
+  hireDate?: Date | string
   welfarePoints: number
   superiorId?: string    // 直属の上司ID (評価者)
 }

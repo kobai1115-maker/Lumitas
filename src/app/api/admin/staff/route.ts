@@ -66,6 +66,7 @@ export async function POST(req: Request) {
       facilityId: targetFacilityId,
       divisionId: targetDivisionId,
       birthday,
+      hireDate,
       yearsOfService,
       experienceYears
     } = await req.json()
@@ -93,6 +94,7 @@ export async function POST(req: Request) {
         gradeLevel: gradeLevel || 1,
         department,
         birthday: birthday ? new Date(birthday) : null,
+        hireDate: hireDate ? new Date(hireDate) : null,
         yearsOfService: parseInt(yearsOfService) || 0,
         experienceYears: parseInt(experienceYears) || 0,
         corporationId,
@@ -111,7 +113,7 @@ export async function POST(req: Request) {
 // 3. スタッフ情報更新
 export async function PATCH(req: Request) {
   try {
-    const { id, staffId, role, gradeLevel, department, isActive, fullName, birthday, yearsOfService, experienceYears } = await req.json()
+    const { id, staffId, role, gradeLevel, department, isActive, fullName, birthday, hireDate, yearsOfService, experienceYears } = await req.json()
 
     // 職員IDの変更がある場合、7桁チェック
     if (staffId && staffId.length !== 7) {
@@ -128,6 +130,7 @@ export async function PATCH(req: Request) {
         ...(isActive != null && { isActive }),
         ...(fullName && { fullName }),
         ...(birthday !== undefined && { birthday: birthday ? new Date(birthday) : null }),
+        ...(hireDate !== undefined && { hireDate: hireDate ? new Date(hireDate) : null }),
         ...(yearsOfService != null && { yearsOfService: parseInt(yearsOfService) }),
         ...(experienceYears != null && { experienceYears: parseInt(experienceYears) }),
       }

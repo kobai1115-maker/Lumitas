@@ -23,6 +23,7 @@ import { toast } from "sonner"
 import { clsx } from 'clsx'
 import { useProfile } from '@/hooks/use-profile'
 import { StaffImportModal } from '@/components/features/admin/StaffImportModal'
+import { calculateTenure } from '@/lib/utils/date'
 
 type Staff = {
   id: string
@@ -32,6 +33,8 @@ type Staff = {
   role: string
   department: string
   gradeLevel: number
+  yearsOfService: number
+  hireDate?: string
   welfarePoints: number
   isActive: boolean
 }
@@ -64,6 +67,7 @@ export default function AdminStaffPage() {
     role: 'STAFF_CAREGIVER',
     gradeLevel: 1,
     birthday: '',
+    hireDate: '',
     yearsOfService: 0,
     experienceYears: 0,
     facilityId: ''
@@ -144,6 +148,7 @@ export default function AdminStaffPage() {
           role: 'STAFF_CAREGIVER',
           gradeLevel: 1,
           birthday: '',
+          hireDate: '',
           yearsOfService: 0,
           experienceYears: 0,
           facilityId: selectedFacilityId
@@ -333,20 +338,25 @@ export default function AdminStaffPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="yearsOfService" className="text-xs font-black text-gray-400 uppercase tracking-widest pl-1">萌佑会での勤続年数</Label>
-                        <div className="relative">
+                        <Label htmlFor="hireDate" className="text-xs font-black text-gray-400 uppercase tracking-widest pl-1">入社日 (萌佑会)</Label>
+                        <div className="flex flex-col gap-2">
                           <Input 
-                            id="yearsOfService" 
-                            type="number" 
-                            min="0"
-                            className="rounded-xl border-gray-100 h-12 font-bold pr-12"
-                            value={formData.yearsOfService}
-                            onChange={e => setFormData({...formData, yearsOfService: parseInt(e.target.value)})}
+                            id="hireDate" 
+                            type="date"
+                            className="rounded-xl border-gray-100 h-12 font-bold focus:ring-primary/10"
+                            value={formData.hireDate}
+                            onChange={e => setFormData({...formData, hireDate: e.target.value})}
                           />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">年</span>
+                          {formData.hireDate && (
+                            <div className="px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">
+                              <p className="text-[10px] font-black text-primary uppercase tracking-wider">
+                                自動算出: <span className="text-sm ml-1">{calculateTenure(formData.hireDate)}</span>
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
-                   </div>
+                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                       <div className="space-y-2">
@@ -474,6 +484,7 @@ export default function AdminStaffPage() {
                               <div className="flex items-center gap-4 text-xs font-bold text-gray-400">
                                  <span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 opacity-50" />{s.department}</span>
                                  <span className="bg-gray-100 text-gray-500 rounded px-2 py-0.5">等級: {s.gradeLevel}</span>
+                                 <span className="text-primary/70 bg-primary/5 rounded px-2 py-0.5">{calculateTenure(s.hireDate || (s.yearsOfService ? `${new Date().getFullYear() - s.yearsOfService}-01-01` : null))}</span>
                               </div>
                            </div>
                         </div>
