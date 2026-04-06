@@ -1,38 +1,41 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UserProfile, DashboardMetrics, ScoringResult } from '@/types'
-import { supabase } from '@/lib/supabase'
 import { CalendarDays, ChevronDown, History } from 'lucide-react'
 
 import ProgressOverview from '@/components/features/dashboard/ProgressOverview'
 import RoleBasedWidgets from '@/components/features/dashboard/RoleBasedWidgets'
+import { FiscalTransitionAlert } from '@/components/features/dashboard/FiscalTransitionAlert'
 import { useProfile } from '@/hooks/use-profile'
+import { getAvailableFiscalYears, getFiscalYear, getFiscalYearLabel } from '@/lib/utils/fiscal-year'
 
-// 年度ごとのモックデータ定義 (蓄積のシミュレーション)
+// 年度ごとのモックデータ定義 (2026年度からに更新)
 const YEARLY_DATA: Record<string, { metrics: DashboardMetrics, scoreData: ScoringResult }> = {
-  '2024': {
-    metrics: { completionRate: 85, incidentReports: 2, skillLevel: 4 },
-    scoreData: { achievementScore: 35.5, competencyScore: 24.0, sentimentScore: 28.5, totalScore: 88.0, finalGrade: 'A' }
-  },
-  '2025': {
+  '2026': {
     metrics: { completionRate: 92, incidentReports: 1, skillLevel: 5 },
     scoreData: { achievementScore: 38.0, competencyScore: 27.5, sentimentScore: 29.0, totalScore: 94.5, finalGrade: 'S' }
   },
-  '2023': {
-    metrics: { completionRate: 78, incidentReports: 4, skillLevel: 3 },
-    scoreData: { achievementScore: 30.0, competencyScore: 20.0, sentimentScore: 25.0, totalScore: 75.0, finalGrade: 'B' }
+  '2027': {
+    metrics: { completionRate: 0, incidentReports: 0, skillLevel: 5 },
+    scoreData: { achievementScore: 0, competencyScore: 0, sentimentScore: 0, totalScore: 0, finalGrade: 'A' }
   }
 }
 
 export default function DashboardPage() {
   const { profile, loading } = useProfile()
-  const [fiscalYear, setFiscalYear] = useState('2024')
+  const currentYear = getFiscalYear().toString()
+  const [fiscalYear, setFiscalYear] = useState(currentYear)
   const [isYearSelectorOpen, setIsYearSelectorOpen] = useState(false)
 
-  // 選択中の年度のデータを取得
-  const currentData = YEARLY_DATA[fiscalYear] || YEARLY_DATA['2024']
+  // 選択可能な年度リストを動的に取得
+  const availableYears = useMemo(() => getAvailableFiscalYears(1), []) // 未来1年分まで表示
+
+  // 選択中の年度のデータ取得 (データがない場合は現在の年度のスケルトンまたは2026年分を流用)
+  const currentData = useMemo(() => {
+    return YEARLY_DATA[fiscalYear] || YEARLY_DATA['2026']
+  }, [fiscalYear])
 
   if (loading || !profile) {
     return (
@@ -44,13 +47,13 @@ export default function DashboardPage() {
 
   return (
     <motion.div 
-      key={fiscalYear} // 年度切替時にアニメーションを再発生させる
+      key={fiscalYear} 
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {/* ユーザーヘッダー & 年度セレクター */}
+      <FiscalTransitionAlert />
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-gray-900 mb-1">
@@ -62,7 +65,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 年度切り替えスイッチ (Premium UI) */}
         <div className="relative">
           <button 
             onClick={() => setIsYearSelectorOpen(!isYearSelectorOpen)}
@@ -73,7 +75,7 @@ export default function DashboardPage() {
             </div>
             <div className="text-left">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">表示対象年度</p>
-              <span className="text-sm font-black text-gray-700">{fiscalYear}年度</span>
+              <span className="text-sm font-black text-gray-700">{getFiscalYearLabel(fiscalYear)}</span>
             </div>
             <ChevronDown className={`w-4 h-4 text-gray-300 transition-transform duration-300 ${isYearSelectorOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -87,7 +89,7 @@ export default function DashboardPage() {
                 className="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 p-2 overflow-hidden"
               >
                 <p className="px-3 py-2 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 mb-1">年度の切り替え</p>
-                {Object.keys(YEARLY_DATA).sort((a, b) => b.localeCompare(a)).map((year) => (
+                {availableYears.map((year) => (
                   <button
                     key={year}
                     onClick={() => { setFiscalYear(year); setIsYearSelectorOpen(false); }}
@@ -97,14 +99,14 @@ export default function DashboardPage() {
                       : 'text-gray-500 hover:bg-gray-50'
                     }`}
                   >
-                    <span>{year}年度</span>
+                    <span>{getFiscalYearLabel(year)}</span>
                     {fiscalYear === year && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
                   </button>
                 ))}
                 <div className="border-t border-gray-50 mt-2 pt-2 px-2 pb-1">
                   <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold px-2 uppercase tracking-tighter">
                     <History className="w-3 h-3" />
-                    過去の蓄積データ
+                    システム稼働開始: 2026年度
                   </div>
                 </div>
               </motion.div>
@@ -117,11 +119,10 @@ export default function DashboardPage() {
       
       <div className="pt-4 border-t border-gray-100">
         <h2 className="text-lg font-semibold mb-4 text-gray-800 tracking-tight flex items-center gap-2">
-          {fiscalYear}年度の重点目標・取り組み状況
+          {getFiscalYearLabel(fiscalYear)}の重点目標・取り組み状況
         </h2>
         <RoleBasedWidgets role={profile.role} metrics={currentData.metrics} />
       </div>
     </motion.div>
   )
 }
-

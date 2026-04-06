@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerAuthUser } from '@/lib/auth-server'
 import { Role } from '@prisma/client'
+import { createClient } from '@supabase/supabase-js'
+
+// Supabase Admin クライアント取得関数（サーバーサイド専用）
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder_key'
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
+}
 
 // 日本語役職名から Role Enum へのマッピング
 const ROLE_MAP: Record<string, Role> = {
@@ -37,6 +45,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Corporation ID is required' }, { status: 400 })
     }
 
+    const supabaseAdmin = getSupabaseAdmin()
     let results = {
       created: 0,
       updated: 0,
@@ -55,6 +64,8 @@ export async function POST(req: Request) {
           results.errors++
           continue
         }
+
+        const sid = String(staffId)
 
         // 1. 施設の特定
         let facilityId: string | null = null
@@ -94,16 +105,16 @@ export async function POST(req: Request) {
 
         // 4. Upsert (職員IDで一意に特定)
         const existingUser = await (prisma as any).user.findUnique({
-          where: { staffId: String(staffId) }
+          where: { staffId: sid }
         })
 
         if (existingUser) {
           // 更新 (異動・昇進・降格)
           await (prisma as any).user.update({
-            where: { staffId: String(staffId) },
+            where: { staffId: sid },
             data: {
               fullName,
-              email,          // メールアドレスも更新対象 (要件に応じて)
+              email,
               role,
               gradeLevel: Number(gradeLevel) || 1,
               department: department || '介護課',
@@ -114,22 +125,49 @@ export async function POST(req: Request) {
           })
           results.updated++
         } else {
-          // 新規作成
-          await (prisma as any).user.create({
-            data: {
-              staffId: String(staffId),
+          // 新規作成: まず Supabase Auth ユーザーを作成
+          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            password: 'CareGrow2026',
+            email_confirm: true,
+            user_metadata: {
+              staffId: sid,
               fullName,
-              email,
-              role,
-              gradeLevel: Number(gradeLevel) || 1,
-              department: department || '介護課',
-              facilityId,
-              unitId,
-              corporationId: CORP_ID,
-              mustChangePassword: true
+              role
             }
           })
-          results.created++
+
+          if (authError) {
+            console.error(`Auth creation failed for ${sid}:`, authError.message)
+            results.errors++
+            continue
+          }
+
+          const supabaseUserId = authData.user.id
+
+          try {
+            // Prisma に登録
+            await (prisma as any).user.create({
+              data: {
+                id: supabaseUserId,
+                staffId: sid,
+                fullName,
+                email,
+                role,
+                gradeLevel: Number(gradeLevel) || 1,
+                department: department || '介護課',
+                facilityId,
+                unitId,
+                corporationId: CORP_ID,
+                mustChangePassword: true
+              }
+            })
+            results.created++
+          } catch (err) {
+            console.error(`Prisma creation failed for ${sid}, rolling back auth:`, err)
+            await supabaseAdmin.auth.admin.deleteUser(supabaseUserId)
+            results.errors++
+          }
         }
       } catch (err) {
         console.error('Row import error:', err)
