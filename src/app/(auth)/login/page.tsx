@@ -44,7 +44,7 @@ export default function LoginPage() {
       }
 
       // 職員IDを内部的なメールアドレス形式に変換（@が含まれていない場合のみ）
-      const loginEmail = staffId.includes('@') ? staffId : `${staffId}@lumitas.local`
+      const loginEmail = staffId.includes('@') ? staffId : `${staffId}@moyuukai.local`
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: loginEmail,

@@ -65,7 +65,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { items, corporationId: customCorpId } = await req.json()
+    const body = await req.json()
+    const { items, type, name, parentId, corporationId: customCorpId } = body
     
     // 対象法人IDの決定
     const targetCorpId = (user.role === 'SYSTEM_ADMIN' ? customCorpId : null) || user.corporationId
@@ -73,6 +74,40 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '法人IDが不明です' }, { status: 400 })
     }
 
+    // 単体登録モード (手動追加)
+    if (type && name) {
+      switch (type) {
+        case 'DIVISION':
+          const newDiv = await prisma.division.create({
+            data: { name, corporationId: targetCorpId }
+          })
+          return NextResponse.json({ success: true, item: newDiv })
+        
+        case 'FACILITY':
+          // parentId は DivisionId (または null)
+          const newFac = await prisma.facility.create({
+            data: { 
+              name, 
+              corporationId: targetCorpId,
+              divisionId: parentId || null
+            }
+          })
+          return NextResponse.json({ success: true, item: newFac })
+        
+        case 'UNIT':
+          // parentId は FacilityId (必須)
+          if (!parentId) return NextResponse.json({ error: '施設IDが必要です' }, { status: 400 })
+          const newUnit = await prisma.unit.create({
+            data: { name, facilityId: parentId }
+          })
+          return NextResponse.json({ success: true, item: newUnit })
+        
+        default:
+          return NextResponse.json({ error: '無効な種別です' }, { status: 400 })
+      }
+    }
+
+    // 一括登録モード (Excelインポート)
     if (!Array.isArray(items)) {
       return NextResponse.json({ error: '無効なデータ形式です' }, { status: 400 })
     }

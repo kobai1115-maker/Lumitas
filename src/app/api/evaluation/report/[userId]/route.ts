@@ -4,7 +4,7 @@ import { getServerAuthUser } from '@/lib/auth-server'
 
 export async function GET(
   request: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const { user: currentUser, error: authError } = await getServerAuthUser()
@@ -12,7 +12,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const userId = params.userId
+    const { userId } = await params
 
     // [権限管理] 他人の評価レポート閲覧チェック
     if (userId !== currentUser.id && currentUser.role !== 'ADMIN') {

@@ -34,34 +34,34 @@ export function OrganizationImportModal({ isOpen, onClose, onSuccess }: Props) {
   const [isUploading, setIsUploading] = useState(false)
 
   // Excelファイルの読み込み
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
 
     setFile(selectedFile)
-    const reader = new FileReader()
-    reader.onload = (evt) => {
-      try {
-        const bstr = evt.target?.result
-        const wb = XLSX.read(bstr, { type: 'binary' })
-        const wsname = wb.SheetNames[0]
-        const ws = wb.Sheets[wsname]
-        const data = XLSX.utils.sheet_to_json(ws) as any[]
+    const { readExcelFirstSheet, getCellValue, ORG_HEADER_MAP } = await import('@/lib/excel-utils')
 
-        // データの整形 (カラム名のマッピングを考慮)
-        const items: ImportItem[] = data.map(row => ({
-          divisionName: row['部門名'] || row['Division'] || '',
-          facilityName: row['事業所名'] || row['Facility'] || '',
-          unitName: row['ユニット名'] || row['Unit'] || ''
-        })).filter(item => item.facilityName) // 事業所名がないものは除外
+    try {
+      const data = await readExcelFirstSheet(selectedFile)
 
-        setPreviewData(items)
+      // データの整形 (カラム名のマッピングを考慮)
+      const items: ImportItem[] = data.map(row => ({
+        divisionName: getCellValue(row, ORG_HEADER_MAP.divisionName),
+        facilityName: getCellValue(row, ORG_HEADER_MAP.facilityName),
+        unitName: getCellValue(row, ORG_HEADER_MAP.unitName)
+      })).filter(item => item.facilityName) // 事業所名がないものは除外
+
+      setPreviewData(items)
+
+      if (items.length === 0) {
+        toast.error('有効な組織データが見つかりませんでした。ヘッダー名を確認してください。')
+      } else {
         toast.success(`${items.length} 件のデータを読み込みました`)
-      } catch (err) {
-        toast.error('Excelファイルの解析に失敗しました')
       }
+    } catch (err) {
+      console.error('Excel parse error:', err)
+      toast.error('Excelファイルの解析に失敗しました')
     }
-    reader.readAsBinaryString(selectedFile)
   }
 
   // サーバーへ送信

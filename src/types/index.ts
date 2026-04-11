@@ -39,6 +39,7 @@ export type Department = {
 // User Profile Extension (to avoid circular dependency or missing fields on UI)
 export type UserProfile = {
   id: string
+  staffId: string
   email: string
   fullName: string
   fullNameKana?: string

@@ -39,40 +39,40 @@ export function StaffImportModal({ isOpen, onClose, onSuccess }: Props) {
   const [isUploading, setIsUploading] = useState(false)
 
   // Excelファイルの読み込み
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
 
     setFile(selectedFile)
-    const reader = new FileReader()
-    reader.onload = (evt) => {
-      try {
-        const bstr = evt.target?.result
-        const wb = XLSX.read(bstr, { type: 'binary' })
-        const wsname = wb.SheetNames[0]
-        const ws = wb.Sheets[wsname]
-        const data = XLSX.utils.sheet_to_json(ws) as any[]
+    const { readExcelFirstSheet, getCellValue, STAFF_HEADER_MAP } = await import('@/lib/excel-utils')
 
-        // データの整形 (カラム名のマッピングを考慮)
-        const items: ImportStaffItem[] = data.map(row => ({
-          staffId: String(row['職員ID'] || row['StaffId'] || ''),
-          fullName: row['氏名'] || row['FullName'] || '',
-          fullNameKana: row['フリガナ'] || row['FullNameKana'] || row['Kana'] || '',
-          email: row['メールアドレス'] || row['Email'] || '',
-          roleName: row['役職'] || row['Role'] || '介護職',
-          facilityName: row['事業所名'] || row['Facility'] || '',
-          unitName: row['ユニット名'] || row['Unit'] || '',
-          gradeLevel: Number(row['現在の等級'] || row['Grade'] || 1),
-          department: row['部署'] || row['Department'] || '介護課'
-        })).filter(item => item.staffId && item.fullName)
+    try {
+      const data = await readExcelFirstSheet(selectedFile)
 
-        setPreviewData(items)
+      // データの整形 (カラム名のマッピングを考慮)
+      const items: ImportStaffItem[] = data.map(row => ({
+        staffId: getCellValue(row, STAFF_HEADER_MAP.staffId),
+        fullName: getCellValue(row, STAFF_HEADER_MAP.fullName),
+        fullNameKana: getCellValue(row, STAFF_HEADER_MAP.fullNameKana),
+        email: getCellValue(row, STAFF_HEADER_MAP.email),
+        roleName: getCellValue(row, STAFF_HEADER_MAP.roleName) || '介護職',
+        facilityName: getCellValue(row, STAFF_HEADER_MAP.facilityName),
+        unitName: getCellValue(row, STAFF_HEADER_MAP.unitName),
+        gradeLevel: Number(getCellValue(row, STAFF_HEADER_MAP.gradeLevel) || 1),
+        department: getCellValue(row, STAFF_HEADER_MAP.department) || '介護課'
+      })).filter(item => item.staffId && item.fullName)
+
+      setPreviewData(items)
+      
+      if (items.length === 0) {
+        toast.error('有効なスタッフデータが見つかりませんでした。ヘッダー名を確認してください。')
+      } else {
         toast.success(`${items.length} 名のスタッフデータを読み込みました`)
-      } catch (err) {
-        toast.error('Excelファイルの解析に失敗しました')
       }
+    } catch (err) {
+      console.error('Excel parse error:', err)
+      toast.error('Excelファイルの解析に失敗しました')
     }
-    reader.readAsBinaryString(selectedFile)
   }
 
   // サーバーへ送信

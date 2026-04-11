@@ -155,16 +155,16 @@ export default function DashboardLayout({
                     key={item.href}
                     href={item.href}
                     prefetch={true}
-
                     className={clsx(
                       "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-150",
                       isActive
                         ? "bg-gray-900 text-white shadow-xl shadow-gray-200"
                         : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                     )}
+                    title={item.name}
                   >
-                    <Icon className={clsx("w-5 h-5", isActive ? "stroke-[2.5px]" : "stroke-2")} />
-                    {item.name}
+                    <Icon className={clsx("w-5 h-5 shrink-0", isActive ? "stroke-[2.5px]" : "stroke-2")} />
+                    <span className="truncate min-w-0">{item.name}</span>
                   </Link>
                 )
               })}
@@ -182,16 +182,16 @@ export default function DashboardLayout({
                       key={item.href}
                       href={item.href}
                       prefetch={true}
-
                       className={clsx(
                         "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150",
                         isActive
                           ? "bg-primary/10 text-primary"
                           : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                       )}
+                      title={item.name}
                     >
-                      <Icon className={clsx("w-4 h-4", isActive ? "stroke-[2.5px]" : "stroke-2")} />
-                      {item.name}
+                      <Icon className={clsx("w-4 h-4 shrink-0", isActive ? "stroke-[2.5px]" : "stroke-2")} />
+                      <span className="truncate min-w-0">{item.name}</span>
                     </Link>
                   )
                 })}

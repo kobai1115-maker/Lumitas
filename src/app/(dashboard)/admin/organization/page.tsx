@@ -22,6 +22,7 @@ import * as XLSX from 'xlsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { OrganizationImportModal } from '@/components/features/admin/OrganizationImportModal'
+import { OrgItemRegisterModal, OrgItemType } from '@/components/features/admin/OrgItemRegisterModal'
 import { Badge } from '@/components/ui/badge'
 import { toast } from "sonner"
 import { clsx } from 'clsx'
@@ -42,6 +43,19 @@ export default function AdminOrganizationPage() {
   const [loading, setLoading] = useState(true)
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({ 'root': true })
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  
+  // 登録モーダル用
+  const [registerModal, setRegisterModal] = useState<{
+    isOpen: boolean,
+    type: OrgItemType | null,
+    parentId: string | null,
+    parentName: string | null
+  }>({
+    isOpen: false,
+    type: null,
+    parentId: null,
+    parentName: null
+  })
 
   // テンプレートダウンロード機能
   const downloadTemplate = () => {
@@ -80,6 +94,15 @@ export default function AdminOrganizationPage() {
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const openRegisterModal = (type: OrgItemType, parentId: string, parentName: string) => {
+    setRegisterModal({
+      isOpen: true,
+      type,
+      parentId: parentId === 'root' ? null : parentId,
+      parentName
+    })
   }
 
   if (loading) {
@@ -129,6 +152,16 @@ export default function AdminOrganizationPage() {
         onSuccess={fetchOrg}
       />
 
+      {/* 個別登録モーダル */}
+      <OrgItemRegisterModal 
+        isOpen={registerModal.isOpen}
+        onClose={() => setRegisterModal(prev => ({ ...prev, isOpen: false }))}
+        onSuccess={fetchOrg}
+        type={registerModal.type}
+        parentId={registerModal.parentId}
+        parentName={registerModal.parentName}
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* 左側：ツリー表示 */}
         <Card className="lg:col-span-2 border-none shadow-2xl shadow-gray-100 rounded-[2.5rem] bg-white overflow-hidden">
@@ -150,6 +183,7 @@ export default function AdminOrganizationPage() {
                 icon={Building2} 
                 isExpanded={expandedItems['root']}
                 onToggle={() => toggleExpand('root')}
+                onAdd={() => openRegisterModal('DIVISION', 'root', orgData?.name || '')}
               >
                 {/* 部門 (Divisions) */}
                 {orgData?.divisions.map(div => (
@@ -161,6 +195,7 @@ export default function AdminOrganizationPage() {
                     icon={Layers} 
                     isExpanded={expandedItems[div.id]}
                     onToggle={() => toggleExpand(div.id)}
+                    onAdd={() => openRegisterModal('FACILITY', div.id, div.name)}
                     badge="部門"
                   >
                     {div.facilities.map(fac => (
@@ -172,6 +207,7 @@ export default function AdminOrganizationPage() {
                         icon={MapPin}
                         isExpanded={expandedItems[fac.id]}
                         onToggle={() => toggleExpand(fac.id)}
+                        onAdd={() => openRegisterModal('UNIT', fac.id, fac.name)}
                         badge="事業所"
                       >
                          {fac.units.map(unit => (
@@ -199,6 +235,7 @@ export default function AdminOrganizationPage() {
                     icon={MapPin} 
                     isExpanded={expandedItems[fac.id]}
                     onToggle={() => toggleExpand(fac.id)}
+                    onAdd={() => openRegisterModal('UNIT', fac.id, fac.name)}
                     badge="事業所 (直轄)"
                   >
                     {fac.units.map(unit => (
@@ -252,6 +289,7 @@ function TreeItem({
   children, 
   isExpanded, 
   onToggle,
+  onAdd,
   badge
 }: { 
   id: string, 
@@ -261,6 +299,7 @@ function TreeItem({
   children?: React.ReactNode, 
   isExpanded?: boolean,
   onToggle?: () => void,
+  onAdd?: () => void,
   badge?: string
 }) {
   const hasChildren = !!children && Array.isArray(children) ? children.length > 0 : !!children
@@ -282,22 +321,32 @@ function TreeItem({
             ) : null}
           </div>
           <div className={clsx(
-            "p-2 rounded-xl transition-colors",
+            "p-2 rounded-xl transition-colors shrink-0",
             level === 0 ? "bg-gray-900 text-white" : "bg-white border border-gray-100 text-gray-400 group-hover:bg-primary group-hover:text-white"
           )}>
             <Icon className="w-4 h-4" />
           </div>
           <span className={clsx(
-            "font-black tracking-tight",
+            "font-black tracking-tight truncate min-w-0",
             level === 0 ? "text-lg text-gray-900" : "text-sm text-gray-600"
-          )}>{label}</span>
-          {badge && <Badge variant="secondary" className="text-[9px] font-black uppercase tracking-widest py-0 px-2 opacity-50">{badge}</Badge>}
+          )} title={label}>{label}</span>
+          {badge && <Badge variant="secondary" className="text-[9px] font-black uppercase tracking-widest py-0 px-2 opacity-50 shrink-0">{badge}</Badge>}
         </div>
         
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-white hover:shadow-sm">
-            <Plus className="w-3.5 h-3.5 text-gray-400" />
-          </Button>
+          {onAdd && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 rounded-lg hover:bg-white hover:shadow-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAdd();
+              }}
+            >
+              <Plus className="w-3.5 h-3.5 text-gray-400" />
+            </Button>
+          )}
         </div>
       </div>
       

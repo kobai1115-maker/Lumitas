@@ -12,6 +12,7 @@ export async function GET() {
     // クライアントに必要なプロファイル情報を整形して返す
     return NextResponse.json({
       id: user.id,
+      staffId: user.staffId,
       email: user.email,
       fullName: user.fullName,
       role: user.role,
