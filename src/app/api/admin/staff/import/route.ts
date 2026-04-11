@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
     for (const item of items) {
       try {
-        const { staffId, fullName, email, roleName, facilityName, unitName, gradeLevel, department } = item
+        const { staffId, fullName, fullNameKana, email, roleName, facilityName, unitName, gradeLevel, department } = item
 
         if (!staffId || !email) {
           results.errors++
@@ -114,6 +114,7 @@ export async function POST(req: Request) {
             where: { staffId: sid },
             data: {
               fullName,
+              fullNameKana,
               email,
               role,
               gradeLevel: Number(gradeLevel) || 1,
@@ -152,6 +153,7 @@ export async function POST(req: Request) {
                 id: supabaseUserId,
                 staffId: sid,
                 fullName,
+                fullNameKana,
                 email,
                 role,
                 gradeLevel: Number(gradeLevel) || 1,

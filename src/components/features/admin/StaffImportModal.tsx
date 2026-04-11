@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 type ImportStaffItem = {
   staffId: string
   fullName: string
+  fullNameKana: string
   email: string
   roleName: string
   facilityName: string
@@ -56,6 +57,7 @@ export function StaffImportModal({ isOpen, onClose, onSuccess }: Props) {
         const items: ImportStaffItem[] = data.map(row => ({
           staffId: String(row['職員ID'] || row['StaffId'] || ''),
           fullName: row['氏名'] || row['FullName'] || '',
+          fullNameKana: row['フリガナ'] || row['FullNameKana'] || row['Kana'] || '',
           email: row['メールアドレス'] || row['Email'] || '',
           roleName: row['役職'] || row['Role'] || '介護職',
           facilityName: row['事業所名'] || row['Facility'] || '',
@@ -156,6 +158,7 @@ export function StaffImportModal({ isOpen, onClose, onSuccess }: Props) {
                     <tr>
                       <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">職員ID</th>
                       <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">氏名</th>
+                      <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-primary/40">フリガナ</th>
                       <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">役職</th>
                       <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">事業所</th>
                       <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">ユニット</th>
@@ -167,6 +170,7 @@ export function StaffImportModal({ isOpen, onClose, onSuccess }: Props) {
                       <tr key={i} className="hover:bg-gray-50/50">
                         <td className="p-4 text-xs font-black text-gray-400">{item.staffId}</td>
                         <td className="p-4 text-sm font-black text-gray-900">{item.fullName}</td>
+                        <td className="p-4 text-[10px] font-bold text-primary/60">{item.fullNameKana || '-'}</td>
                         <td className="p-4 text-xs font-bold text-gray-600">{item.roleName}</td>
                         <td className="p-4 text-xs font-bold text-gray-600">{item.facilityName || '-'}</td>
                         <td className="p-4 text-xs font-bold text-gray-500">{item.unitName || '-'}</td>

@@ -41,6 +41,7 @@ export type UserProfile = {
   id: string
   email: string
   fullName: string
+  fullNameKana?: string
   role: Role
   corporationId?: string
   facilityId?: string

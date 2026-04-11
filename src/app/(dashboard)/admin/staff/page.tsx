@@ -30,6 +30,7 @@ type Staff = {
   id: string
   staffId: string
   fullName: string
+  fullNameKana?: string
   email: string
   role: string
   department: string
@@ -72,6 +73,7 @@ export default function AdminStaffPage() {
   const [formData, setFormData] = useState({
     staffId: '',
     fullName: '',
+    fullNameKana: '',
     email: '',
     department: '介護課',
     role: 'STAFF_CAREGIVER',
@@ -146,7 +148,7 @@ export default function AdminStaffPage() {
         toast.success('スタッフを正常に登録しました')
         setIsAddDialogOpen(false)
         setFormData({
-          staffId: '', fullName: '', email: '', department: '介護課',
+          staffId: '', fullName: '', fullNameKana: '', email: '', department: '介護課',
           role: 'STAFF_CAREGIVER', gradeLevel: 1, birthday: '',
           hireDate: '', yearsOfService: 0, experienceYears: 0,
           facilityId: selectedFacilityId
@@ -168,6 +170,7 @@ export default function AdminStaffPage() {
     return staffList.filter(s => {
       const matchesSearch = !searchTerm || 
         (s.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (s.fullNameKana || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
         (s.staffId || '').includes(searchTerm) || 
         (s.department || '').includes(searchTerm)
       
@@ -231,19 +234,26 @@ export default function AdminStaffPage() {
                   <div className="p-8 space-y-5">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black text-gray-400 uppercase">職員ID (7桁)</Label>
-                        <Input 
-                          placeholder="例: 1000001" maxLength={7} required 
-                          value={formData.staffId} onChange={e => setFormData({...formData, staffId: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
                         <Label className="text-[10px] font-black text-gray-400 uppercase">氏名</Label>
                         <Input 
                           placeholder="例: 山田 太郎" required 
                           value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})}
                         />
                       </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-black text-gray-400 uppercase">フリガナ (カタカナ)</Label>
+                        <Input 
+                          placeholder="例: ヤマダ タロウ" 
+                          value={formData.fullNameKana} onChange={e => setFormData({...formData, fullNameKana: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black text-gray-400 uppercase">職員ID (7桁)</Label>
+                      <Input 
+                        placeholder="例: 1000001" maxLength={7} required 
+                        value={formData.staffId} onChange={e => setFormData({...formData, staffId: e.target.value})}
+                      />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-black text-gray-400 uppercase">メールアドレス (ログイン用)</Label>
@@ -458,6 +468,11 @@ function StaffCard({ staff, index }: { staff: Staff, index: number }) {
           </div>
 
           <div className="mb-8">
+            {staff.fullNameKana && (
+              <p className="text-[10px] font-black text-primary/60 uppercase tracking-widest mb-0.5">
+                {staff.fullNameKana}
+              </p>
+            )}
             <h3 className="text-xl font-black text-gray-900 group-hover:text-primary transition-colors mb-2">
               {staff.fullName || '名前未登録'}
             </h3>

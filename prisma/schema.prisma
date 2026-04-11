@@ -117,6 +117,7 @@ model User {
   staffId            String    @unique
   email              String    @unique
   fullName           String
+  fullNameKana       String?   // フリガナ（カタカナ）
   role               Role // ADMIN, MANAGER, STAFF_CAREGIVER 等
   gradeLevel         Int       @default(1)
   department         String

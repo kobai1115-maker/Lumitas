@@ -60,6 +60,7 @@ export async function POST(req: Request) {
     const { 
       staffId, 
       fullName, 
+      fullNameKana,
       email, 
       role, 
       gradeLevel, 
@@ -136,6 +137,7 @@ export async function POST(req: Request) {
           staffId,
           email: loginEmail,
           fullName,
+          fullNameKana,
           role,
           gradeLevel: parseInt(gradeLevel) || 1,
           department: department || '介護課',
@@ -168,7 +170,7 @@ export async function POST(req: Request) {
 // 3. スタッフ情報更新
 export async function PATCH(req: Request) {
   try {
-    const { id, staffId, role, gradeLevel, department, isActive, fullName, birthday, hireDate, yearsOfService, experienceYears } = await req.json()
+    const { id, staffId, role, gradeLevel, department, isActive, fullName, fullNameKana, birthday, hireDate, yearsOfService, experienceYears } = await req.json()
 
     // 職員IDの変更がある場合、7桁チェック
     if (staffId && staffId.length !== 7) {
@@ -184,6 +186,7 @@ export async function PATCH(req: Request) {
         ...(department && { department }),
         ...(isActive != null && { isActive }),
         ...(fullName && { fullName }),
+        ...(fullNameKana !== undefined && { fullNameKana }),
         ...(birthday !== undefined && { birthday: birthday ? new Date(birthday) : null }),
         ...(hireDate !== undefined && { hireDate: hireDate ? new Date(hireDate) : null }),
         ...(yearsOfService != null && { yearsOfService: parseInt(yearsOfService) }),

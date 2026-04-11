@@ -3,11 +3,27 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Home, Target, Award, Sparkles, Mic, LogOut, CheckSquare, MessageSquare, Building2, Users, BookOpen, Settings2, Settings, ChevronDown, Heart, Network } from 'lucide-react'
 import { clsx } from 'clsx'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/hooks/use-profile'
+import { LoadingCharacter } from '@/components/ui/loading-character'
+
+// --- トッププログレスバーコンポーネント ---
+const TopProgressBar = ({ isNavigating }: { isNavigating: boolean }) => (
+  <AnimatePresence>
+    {isNavigating && (
+      <motion.div
+        initial={{ width: "0%", opacity: 0 }}
+        animate={{ width: "100%", opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 2, ease: "easeOut" }}
+        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500 z-[100] shadow-[0_0_10px_rgba(251,192,45,0.5)]"
+      />
+    )}
+  </AnimatePresence>
+)
 
 export default function DashboardLayout({
   children,
@@ -18,22 +34,59 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const { profile, loading, isSystemAdmin, isCorpAdmin, isFacilityManager, isStaff, refresh } = useProfile()
   const [isReady, setIsReady] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const [isPageLoading, setIsPageLoading] = useState(false)
+
+  // 画面遷移を検知してバーを出す
+  useEffect(() => {
+    setIsNavigating(true)
+    const timer = setTimeout(() => setIsNavigating(false), 800)
+    return () => clearTimeout(timer)
+  }, [pathname])
+
+  // ページパスが変わった際にオーバーレイを解除（最低表示時間を守る）
+  useEffect(() => {
+    // 遷移が完了した際、最低限の表示時間を確保してフェードアウト
+    const timer = setTimeout(() => {
+      setIsPageLoading(false)
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [pathname])
+
+  const handleLinkClick = (href: string) => {
+    // 現在のページと同じなら何もしない
+    if (pathname === href) return
+    // クリックした瞬間にオーバーレイを表示
+    setIsPageLoading(true)
+  }
 
   // 認証ガード: ログインしていないユーザーをログイン画面へリダイレクト
   useEffect(() => {
     let mounted = true
     const checkAuth = async () => {
-      // API（profile）を待つだけでなく、まずクライアント側のセッションを直接確認
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!loading) {
-        // セッションもプロフィールも無い場合にのみ、未ログインとして扱う
-        if (!session && !profile) {
+      try {
+        // API（profile）を待つだけでなく、まずクライアント側のセッションを直接確認
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        // 認証エラー（Invalid Refresh Tokenなど）が発生した場合はログイン画面へ
+        if (error) {
+          console.error('Auth check error:', error)
           router.push('/login')
-        } else if (profile || session) {
-          // セッションがあれば、プロフィール読み込み中であっても「準備完了」に近い状態とする
-          setIsReady(true)
+          return
         }
+        
+        if (!loading) {
+          // セッションもプロフィールも無い場合にのみ、未ログインとして扱う
+          if (!session && !profile) {
+            router.push('/login')
+          } else if (profile || session) {
+            // セッションがあれば、プロフィール読み込み中であっても「準備完了」に近い状態とする
+            setIsReady(true)
+          }
+        }
+      } catch (e) {
+        console.error('Auth unexpected error:', e)
+        router.push('/login')
       }
     }
     
@@ -87,7 +140,27 @@ export default function DashboardLayout({
   })
 
   return (
-    <div className="flex min-h-screen bg-gray-50 flex-col md:flex-row pb-[env(safe-area-inset-bottom)]">
+    <div className="flex min-h-screen bg-gray-50 flex-col md:flex-row pb-[env(safe-area-inset-bottom)] relative overflow-hidden">
+      {/* 
+        --- 即時オーバーレイ「シャッター遷移」レイヤー ---
+        ここがクリック即座に反応する部分です。
+      */}
+      <AnimatePresence>
+        {isPageLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[999] flex items-center justify-center bg-white/95 backdrop-blur-md"
+          >
+            <div className="transform -translate-y-12">
+              <LoadingCharacter />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <TopProgressBar isNavigating={isNavigating} />
       {/* 
          --- デスクトップ専用: 左サイドバー ---
          will-change-transform を追加してGPU支援を。
@@ -96,7 +169,11 @@ export default function DashboardLayout({
         <div className="flex flex-col h-full">
           {/* ロゴエリア */}
           <div className="p-6 border-b border-gray-100 mb-2">
-            <Link href="/dashboard" className="flex items-center gap-2.5 text-primary font-black text-xl tracking-tighter hover:opacity-80 transition-opacity">
+            <Link 
+              href="/dashboard" 
+              onClick={() => handleLinkClick('/dashboard')}
+              className="flex items-center gap-2.5 text-primary font-black text-xl tracking-tighter hover:opacity-80 transition-opacity"
+            >
               <Sparkles className="w-6 h-6" />
               ルミタス <span className="text-[10px] bg-primary/5 px-1.5 py-0.5 rounded-md font-bold align-middle ml-1">第2版</span>
             </Link>
@@ -114,6 +191,7 @@ export default function DashboardLayout({
                     key={item.href}
                     href={item.href}
                     prefetch={true}
+                    onClick={() => handleLinkClick(item.href)}
                     className={clsx(
                       "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-150",
                       isActive
@@ -140,6 +218,7 @@ export default function DashboardLayout({
                       key={item.href}
                       href={item.href}
                       prefetch={true}
+                      onClick={() => handleLinkClick(item.href)}
                       className={clsx(
                         "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150",
                         isActive
@@ -202,6 +281,7 @@ export default function DashboardLayout({
               key={item.href}
               href={item.href}
               prefetch={true}
+              onClick={() => handleLinkClick(item.href)}
               className={clsx(
                 "flex flex-col items-center justify-center flex-1 h-full space-y-1 transition-all duration-200 relative",
                 isActive ? "text-primary" : "text-gray-400"
