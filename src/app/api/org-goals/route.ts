@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerAuthUser } from '@/lib/auth-server'
 
-// 1. 組織目標の階層構造を取得 (社会福祉法人 萌佑会用モック含む)
+// 1. 組織目標の階層構造を取得
 export async function GET(req: Request) {
   try {
     const { user, error } = await getServerAuthUser()

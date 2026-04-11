@@ -1,24 +1,15 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Shield, Users, Building2, UserCircle, Plus, Search, Trash2, Edit3, Save, X, Settings2 } from 'lucide-react'
+import { Shield, Users, Building2, UserCircle, Plus, Trash2, Edit3, Save, X, Settings2, Loader2 } from 'lucide-react'
 import { PositionDefinition, AuthorityLevel } from '@/types'
 import { clsx } from 'clsx'
-
-// 初期マスターデータ (モック)
-const DEFAULT_POSITIONS: PositionDefinition[] = [
-  { id: 'p1', name: '理事長', authority: 'ALL', rank: 1 },
-  { id: 'p2', name: '施設長', authority: 'ALL', rank: 2 },
-  { id: 'p3', name: '介護課長', authority: 'DEPARTMENT', rank: 3 },
-  { id: 'p4', name: '介護主任', authority: 'SUBORDINATES', rank: 4 },
-  { id: 'p5', name: 'リーダー', authority: 'SUBORDINATES', rank: 5 },
-  { id: 'p6', name: '一般職', authority: 'SELF', rank: 6 },
-]
+import { toast } from 'sonner'
 
 const AUTHORITY_LABELS: Record<AuthorityLevel, { label: string; icon: React.ElementType; color: string; desc: string }> = {
   ALL: { label: '全職員 閲覧', icon: Shield, color: 'text-rose-600 bg-rose-50', desc: '施設全体のデータを閲覧可能' },
@@ -28,18 +19,62 @@ const AUTHORITY_LABELS: Record<AuthorityLevel, { label: string; icon: React.Elem
 }
 
 export default function RoleSettingsPage() {
-  const [positions, setPositions] = useState<PositionDefinition[]>(DEFAULT_POSITIONS)
+  const [positions, setPositions] = useState<PositionDefinition[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<PositionDefinition>>({})
+
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/admin/roles')
+      if (res.ok) {
+        const data = await res.json()
+        setPositions(data)
+      }
+    } catch (err) {
+      toast.error('役職情報の取得に失敗しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const saveAll = async (targetPositions?: PositionDefinition[]) => {
+    setIsSaving(true)
+    try {
+      const res = await fetch('/api/admin/roles', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roles: targetPositions ?? positions })
+      })
+
+      if (res.ok) {
+        toast.success('役職設定を保存しました')
+        fetchData()
+      } else {
+        toast.error('保存に失敗しました')
+      }
+    } catch (err) {
+      toast.error('通信エラーが発生しました')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const handleEdit = (pos: PositionDefinition) => {
     setEditId(pos.id)
     setEditForm(pos)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editId) return
-    setPositions(positions.map(p => p.id === editId ? { ...p, ...editForm } as PositionDefinition : p))
+    const updated = positions.map(p => p.id === editId ? { ...p, ...editForm } as PositionDefinition : p)
+    await saveAll(updated)
     setEditId(null)
   }
 
@@ -52,6 +87,21 @@ export default function RoleSettingsPage() {
     }
     setPositions([...positions, newPos])
     handleEdit(newPos)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('この役職を削除してもよろしいですか？紐付いている職員がいる場合、役職設定が解除されます。')) return
+    const updated = positions.filter(p => p.id !== id)
+    await saveAll(updated)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-gray-400">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="font-black tracking-widest uppercase text-xs">Loading Roles...</p>
+      </div>
+    )
   }
 
   return (
@@ -75,6 +125,13 @@ export default function RoleSettingsPage() {
       </div>
 
       <div className="grid gap-4">
+        {positions.length === 0 && (
+          <div className="p-20 text-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-[40px]">
+            <p className="text-gray-400 font-bold mb-4">登録されている役職がありません</p>
+            <Button onClick={handleAdd} variant="outline" className="rounded-xl font-black">最初の役職を追加する</Button>
+          </div>
+        )}
+        
         {positions.sort((a,b) => a.rank - b.rank).map((pos) => {
           const auth = AUTHORITY_LABELS[pos.authority]
           const isEditing = editId === pos.id
@@ -105,6 +162,7 @@ export default function RoleSettingsPage() {
                             <button
                               key={level}
                               onClick={() => setEditForm({...editForm, authority: level})}
+                              disabled={isSaving}
                               className={clsx(
                                 "text-[10px] p-2.5 rounded-xl font-bold border transition-all text-center",
                                 editForm.authority === level 
@@ -141,8 +199,8 @@ export default function RoleSettingsPage() {
                   <div className="p-5 flex md:flex-col border-t md:border-t-0 md:border-l border-gray-100 bg-gray-50/50 gap-2">
                     {isEditing ? (
                       <>
-                        <Button onClick={handleSave} size="sm" className="bg-primary text-white font-black rounded-lg w-full">
-                          <Save className="w-4 h-4 mr-2" />
+                        <Button onClick={handleSave} disabled={isSaving} size="sm" className="bg-primary text-white font-black rounded-lg w-full">
+                          {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                           保存
                         </Button>
                         <Button onClick={() => setEditId(null)} variant="ghost" size="sm" className="text-gray-400 font-black rounded-lg w-full">
@@ -154,10 +212,11 @@ export default function RoleSettingsPage() {
                       <>
                         <Button onClick={() => handleEdit(pos)} variant="ghost" size="sm" className="text-primary hover:bg-primary/5 font-black rounded-lg w-full flex justify-between px-3">
                           <Edit3 className="w-4 h-4" />
-                          編集
+                          表示
                         </Button>
                         <Button 
-                          onClick={() => setPositions(positions.filter(p => p.id !== pos.id))}
+                          onClick={() => handleDelete(pos.id)}
+                          disabled={isSaving}
                           variant="ghost" 
                           size="sm" 
                           className="text-rose-400 hover:text-rose-500 hover:bg-rose-50 font-black rounded-lg w-full flex justify-between px-3"

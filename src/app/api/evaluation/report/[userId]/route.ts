@@ -28,35 +28,37 @@ export async function GET(
       }
     }
 
-    // デモ用データ（本来的にはPrismaで集計）
-    const demoStaffList: Record<string, any> = {
-      'u1': { fullName: '小林 洋貴', position: '管理者', dept: '管理部', grade: 6, comment: '多角的な視点から施設全体のマネジメントを完遂。特にDX推進において顕著なリーダーシップを発揮しました。' },
-      'u2': { fullName: '山田 里美', position: '副管理者', dept: '管理部', grade: 5, comment: '各部署間の連携を円滑にし、待機者解消に大きく貢献。現場スタッフのメンタルケアにおいても高い評価を得ています。' },
-      'u3': { fullName: '斉藤 課長', position: '介護課長', dept: '介護課', grade: 5, comment: '専門性の高いケアの標準化に成功しています。部下の育成にも定評があり、次世代のリーダー候補が着実に育っています。' },
-      'u4': { fullName: '田中 主任', position: '介護主任', dept: '介護課', grade: 4, comment: '現場のオペレーション改善において顕著な成果を上げています。特に事故防止の取り組みは他部署の模範となっています。' },
-      'u5': { fullName: '鈴木 太郎', position: '一般職', dept: '介護課', grade: 2, comment: '利用者様一人ひとりに寄り添ったケアが非常に高く評価されています。チーム内でのムードメーカーでもあり、周囲への好影響が見られます。' }
-    }
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        corporation: true,
+        facility: true,
+        position: true,
+      }
+    })
 
-    const targetDemo = demoStaffList[userId] || demoStaffList['u1']
+    if (!targetUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
 
     return NextResponse.json({
       staff: {
-        fullName: targetDemo.fullName,
-        positionName: targetDemo.position,
-        departmentName: targetDemo.dept,
-        gradeLevel: targetDemo.grade,
-        lastOneOnOneDate: '2026/03/25'
+        fullName: targetUser.fullName,
+        positionName: targetUser.position?.name || '一般職',
+        departmentName: targetUser.department || '未設定',
+        gradeLevel: targetUser.gradeLevel,
+        lastOneOnOneDate: '直近なし' // ここは将来的にOneOnOneNoteから最新日を取得するように拡張可能
       },
       metrics: {
-        achievement: 85 + Math.floor(Math.random() * 5),
-        competency: 82 + Math.floor(Math.random() * 8),
-        sentiment: 92 + Math.floor(Math.random() * 4),
-        skills: 80 + Math.floor(Math.random() * 10),
-        team: 88 + Math.floor(Math.random() * 6)
+        achievement: 80, // 将来的にEvaluationモデルから集計
+        competency: 75,
+        sentiment: 85,
+        skills: 70,
+        team: 80
       },
-      aiComment: targetDemo.comment,
-      corpName: '社会福祉法人 萌佑会',
-      locationName: '特別養護老人ホーム ルミタス'
+      aiComment: `${targetUser.fullName}さんは、${targetUser.department}の一員として誠実に業務に励んでいます。`,
+      corpName: targetUser.corporation?.name || '社会福祉法人 萌佑会',
+      locationName: targetUser.facility?.name || '拠点未設定'
     })
 
   } catch (error) {

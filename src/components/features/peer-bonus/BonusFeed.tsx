@@ -1,37 +1,43 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import { MessageSquareHeart, Reply, MoreVertical } from 'lucide-react'
+import { MessageSquareHeart, Reply, MoreVertical, Loader2 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-
-// 仮のデータ
-const MOCK_BONUSES = [
-  {
-    id: '1',
-    senderId: 'user-2', senderName: '佐藤 花子', senderAvatar: '/avatars/1.png',
-    receiverId: 'user-1', receiverName: '山田 太郎', receiverAvatar: '/avatars/2.png',
-    points: 10,
-    tag: '#神対応',
-    message: '急な見学対応ありがとうございました！山田さんの丁寧な説明で、ご家族も安心されていました。',
-    createdAt: new Date(Date.now() - 1000 * 60 * 30), // 30 mins ago
-    reactions: 5
-  },
-  {
-    id: '2',
-    senderId: 'user-3', senderName: '鈴木 一郎', senderAvatar: '/avatars/3.png',
-    receiverId: 'user-4', receiverName: '田中 チームリーダー', receiverAvatar: '/avatars/4.png',
-    points: 5,
-    tag: '#チームワーク',
-    message: '記録システムの入力漏れをフォローしていただき助かりました！次回から気をつけます。',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-    reactions: 12
-  }
-]
+import { toast } from 'sonner'
 
 export default function BonusFeed({ searchQuery }: { searchQuery: string }) {
-  const [feed] = useState(MOCK_BONUSES)
+  const [feed, setFeed] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchFeed = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/peer-bonus')
+      if (res.ok) {
+        const data = await res.json()
+        setFeed(data.map((b: any) => ({
+          id: b.id,
+          senderName: b.sender?.fullName || '不明',
+          receiverName: b.receiver?.fullName || '不明',
+          points: b.points,
+          tag: b.tag || '#感謝',
+          message: b.message,
+          createdAt: new Date(b.createdAt),
+          reactions: 0 // 現状は0固定
+        })))
+      }
+    } catch (err) {
+      toast.error('フィードの取得に失敗しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchFeed()
+  }, [])
 
   // 検索フィルタリング
   const filteredFeed = feed.filter(b => 
@@ -40,6 +46,15 @@ export default function BonusFeed({ searchQuery }: { searchQuery: string }) {
     b.receiverName.includes(searchQuery) ||
     b.tag.includes(searchQuery)
   )
+
+  if (loading) {
+    return (
+      <div className="py-20 flex flex-col items-center justify-center gap-4 text-gray-400">
+        <Loader2 className="w-8 h-8 animate-spin" />
+        <p className="text-xs font-bold">フィードを読み込み中...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">

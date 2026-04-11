@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mic, Square, Loader2, Sparkles, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 
 type VoiceInputFabProps = {
   onResult?: (text: string, category: string) => void
@@ -17,39 +18,67 @@ export default function VoiceInputFab({ onResult }: VoiceInputFabProps) {
   
   const handleToggleRecord = async () => {
     if (isRecording) {
-      // 録音停止＆処理開始
+      // 録音停止
       setIsRecording(false)
+      // 音声認識は自動停止されるか、明示的に止める
+      return
+    }
+
+    // 音声認識開始
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      toast.error('お使いのブラウザは音声認識に対応していません。')
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'ja-JP'
+    recognition.interimResults = false
+    recognition.continuous = false
+
+    recognition.onstart = () => {
+      setIsRecording(true)
+      setResultText('')
+      setResultCategory('')
+    }
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript
+      if (!transcript) return
+
       setIsProcessing(true)
-      
       try {
-        // 現実的な録音テキスト例
-        const mockVoiceText = 'えーと、今日10時ごろ、B様がトイレに行こうとして立ち上がった際、足元がふらついて転倒しそうになりました。すぐに支えたので怪我はありませんでした。車椅子のブレーキが甘かったかもしれないので点検しました。'
-        
-        // API呼び出し (Geminiで客観的な評価文に変換)
         const res = await fetch('/api/ai/voice-to-eval', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: mockVoiceText })
+          body: JSON.stringify({ text: transcript })
         })
 
         const data = await res.json()
-        
         if (data.structuredText) {
           setResultText(data.structuredText)
           setResultCategory(data.category)
         }
       } catch (e) {
-        console.error(e)
-        setResultText('エラーが発生しました。再試行してください。')
+        toast.error('AI解析に失敗しました。')
       } finally {
         setIsProcessing(false)
       }
-    } else {
-      // 録音開始
-      setIsRecording(true)
-      setResultText('')
-      setResultCategory('')
     }
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error)
+      setIsRecording(false)
+      if (event.error !== 'no-speech') {
+        toast.error('音声認識中にエラーが発生しました。')
+      }
+    }
+
+    recognition.onend = () => {
+      setIsRecording(false)
+    }
+
+    recognition.start()
   }
 
   const handleApply = () => {

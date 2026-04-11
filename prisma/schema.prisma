@@ -55,6 +55,7 @@ model Corporation {
   orgGoals   OrgGoal[]
   divisions  Division[]
   facilities Facility[]
+  positions  Position[]
 }
 
 model Division {
@@ -139,6 +140,8 @@ model User {
   facility   Facility? @relation(fields: [facilityId], references: [id])
   unitId     String?
   unit       Unit?     @relation(fields: [unitId], references: [id])
+  positionId String?
+  position   Position? @relation(fields: [positionId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -158,6 +161,7 @@ model User {
   @@index([corporationId])
   @@index([divisionId])
   @@index([facilityId])
+  @@index([positionId])
   @@unique([staffId, corporationId])
 }
 
@@ -333,4 +337,18 @@ model TrainingRecord {
 
   @@index([corporationId])
   @@index([facilityId])
+}
+
+model Position {
+  id            String      @id @default(uuid())
+  name          String
+  authority     String      // ALL, DEPARTMENT, SUBORDINATES, SELF
+  rank          Int         @default(1)
+  corporationId String
+  corporation   Corporation @relation(fields: [corporationId], references: [id])
+  users         User[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([corporationId])
 }

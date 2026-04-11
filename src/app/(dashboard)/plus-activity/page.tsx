@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import { 
   Heart, 
   Palmtree, 
@@ -46,6 +47,8 @@ const MOCK_HISTORY: ActivityLog[] = [
 
 export default function PlusActivityPage() {
   const [activeTab, setActiveTab] = useState<ActivityCategory>('HEALTH')
+  const [history, setHistory] = useState<ActivityLog[]>([])
+  const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   
@@ -54,20 +57,66 @@ export default function PlusActivityPage() {
   const [content, setContent] = useState('')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fetchHistory = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/training')
+      if (res.ok) {
+        const data = await res.json()
+        setHistory(data.map((r: any) => ({
+          id: r.id,
+          category: r.type as ActivityCategory,
+          title: r.title,
+          content: r.reportContent || '',
+          points: r.earnedPoints,
+          date: new Date(r.date).toLocaleDateString('ja-JP'),
+          imageUrl: r.imageUrl
+        })))
+      }
+    } catch (err) {
+      toast.error('履歴の取得に失敗しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchHistory()
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     
-    // シミュレート
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/training', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          type: activeTab,
+          date: new Date().toISOString(),
+          hours: 1, // 仮
+          reportContent: content,
+          imageUrl: imagePreview
+        })
+      })
+
+      if (res.ok) {
+        setShowSuccess(true)
+        setTitle('')
+        setContent('')
+        setImagePreview(null)
+        fetchHistory()
+        setTimeout(() => setShowSuccess(false), 3000)
+      } else {
+        toast.error('保存に失敗しました')
+      }
+    } catch (err) {
+      toast.error('エラーが発生しました')
+    } finally {
       setIsSubmitting(false)
-      setShowSuccess(true)
-      setTitle('')
-      setContent('')
-      setImagePreview(null)
-      
-      setTimeout(() => setShowSuccess(false), 3000)
-    }, 1500)
+    }
   }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,6 +126,19 @@ export default function PlusActivityPage() {
       reader.onloadend = () => setImagePreview(reader.result as string)
       reader.readAsDataURL(file)
     }
+  }
+
+  const totalPoints = history.reduce((acc, cur) => acc + cur.points, 0)
+
+  if (loading && history.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <p className="text-[10px] font-black text-gray-400 tracking-widest uppercase text-center">
+          Loading Activities...
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -103,7 +165,7 @@ export default function PlusActivityPage() {
           <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 text-center min-w-[200px]">
              <Trophy className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">現在の累計獲得ポイント</p>
-             <p className="text-4xl font-black text-primary">1,250 <span className="text-sm">pt</span></p>
+             <p className="text-4xl font-black text-primary">{totalPoints.toLocaleString()} <span className="text-sm">pt</span></p>
           </div>
         </div>
       </div>
@@ -238,7 +300,13 @@ export default function PlusActivityPage() {
            </div>
 
            <div className="grid gap-6">
-             {MOCK_HISTORY.map((log, idx) => {
+             {history.length === 0 && !loading && (
+               <div className="py-20 text-center bg-gray-50/50 border-2 border-dashed border-gray-100 rounded-[2rem]">
+                 <p className="text-gray-400 font-bold">まだ記録がありません。最初の活動を入力しましょう！</p>
+               </div>
+             )}
+             
+             {history.map((log, idx) => {
                const catInfo = CATEGORIES.find(c => c.id === log.category)
                const Icon = catInfo?.icon || Award
                return (
@@ -262,7 +330,7 @@ export default function PlusActivityPage() {
                             <div>
                                <div className="flex items-center gap-2 mb-1">
                                   <span className={clsx("text-[9px] font-black px-2 py-0.5 rounded-full uppercase", catInfo?.color.replace('50', '200'))}>
-                                    {catInfo?.label}
+                                    {catInfo?.label || '活動'}
                                   </span>
                                   <span className="text-[10px] font-bold text-gray-300">{log.date}</span>
                                </div>

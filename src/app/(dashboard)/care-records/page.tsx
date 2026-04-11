@@ -9,19 +9,13 @@ import { ClipboardCheck, Search, Clock, User, Coffee, Bath, Activity, ChevronRig
 import { Input } from '@/components/ui/input'
 import { clsx } from 'clsx'
 
-const MOCK_RECORDS = [
-  { id: 1, resident: '佐藤 さき', type: '食事', status: '完了', time: '08:30', detail: '朝食 8割完食・水分 200cc', icon: Coffee, color: 'text-orange-500 bg-orange-50' },
-  { id: 2, resident: '鈴木 一郎', type: '排泄', status: '未完了', time: '10:15', detail: '-', icon: ClipboardCheck, color: 'text-blue-500 bg-blue-50' },
-  { id: 3, resident: '田中 はな', type: '入浴', status: '完了', time: '11:00', detail: '全身清拭・皮膚状態良好', icon: Bath, color: 'text-cyan-500 bg-cyan-50' },
-  { id: 4, resident: '渡辺 誠', type: 'バイタル', status: '未完了', time: '13:00', detail: '-', icon: Activity, color: 'text-rose-500 bg-rose-50' },
-  { id: 5, resident: '伊藤 幸子', type: '食事', status: '完了', time: '12:30', detail: '昼食 全量完食', icon: Coffee, color: 'text-orange-500 bg-orange-50' },
-]
-
 export default function CareRecordsPage() {
+  const [records, setRecords] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
-  const filteredRecords = MOCK_RECORDS.filter(r => 
-    r.resident.includes(searchTerm) || r.type.includes(searchTerm)
+  const filteredRecords = records.filter((r: any) => 
+    r.resident?.includes(searchTerm) || r.type?.includes(searchTerm)
   )
 
   return (
@@ -51,10 +45,10 @@ export default function CareRecordsPage() {
 
       {/* サマリーカード */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryItem label="本日の予定" value={MOCK_RECORDS.length} unit="件" color="bg-gray-100 text-gray-600" />
-        <SummaryItem label="完了済み" value={MOCK_RECORDS.filter(r => r.status === '完了').length} unit="件" color="bg-green-100 text-green-600" />
-        <SummaryItem label="未完了" value={MOCK_RECORDS.filter(r => r.status === '未完了').length} unit="件" color="bg-rose-100 text-rose-600" />
-        <SummaryItem label="記録達成率" value="60" unit="%" color="bg-indigo-100 text-indigo-600" />
+        <SummaryItem label="本日の予定" value={0} unit="件" color="bg-gray-100 text-gray-600" />
+        <SummaryItem label="完了済み" value={0} unit="件" color="bg-green-100 text-green-600" />
+        <SummaryItem label="未完了" value={0} unit="件" color="bg-rose-100 text-rose-600" />
+        <SummaryItem label="記録達成率" value="0" unit="%" color="bg-indigo-100 text-indigo-600" />
       </div>
 
       <Card className="border-gray-100 shadow-xl rounded-3xl overflow-hidden bg-white/80 backdrop-blur-sm">
