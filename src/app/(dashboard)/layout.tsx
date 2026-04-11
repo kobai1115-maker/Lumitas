@@ -8,7 +8,7 @@ import { Home, Target, Award, Sparkles, Mic, LogOut, CheckSquare, MessageSquare,
 import { clsx } from 'clsx'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/hooks/use-profile'
-import { LoadingCharacter } from '@/components/ui/loading-character'
+
 
 // --- トッププログレスバーコンポーネント ---
 const TopProgressBar = ({ isNavigating }: { isNavigating: boolean }) => (
@@ -35,7 +35,6 @@ export default function DashboardLayout({
   const { profile, loading, isSystemAdmin, isCorpAdmin, isFacilityManager, isStaff, refresh } = useProfile()
   const [isReady, setIsReady] = useState(false)
   const [isNavigating, setIsNavigating] = useState(false)
-  const [isPageLoading, setIsPageLoading] = useState(false)
 
   // 画面遷移を検知してバーを出す
   useEffect(() => {
@@ -43,22 +42,6 @@ export default function DashboardLayout({
     const timer = setTimeout(() => setIsNavigating(false), 800)
     return () => clearTimeout(timer)
   }, [pathname])
-
-  // ページパスが変わった際にオーバーレイを解除（最低表示時間を守る）
-  useEffect(() => {
-    // 遷移が完了した際、最低限の表示時間を確保してフェードアウト
-    const timer = setTimeout(() => {
-      setIsPageLoading(false)
-    }, 600)
-    return () => clearTimeout(timer)
-  }, [pathname])
-
-  const handleLinkClick = (href: string) => {
-    // 現在のページと同じなら何もしない
-    if (pathname === href) return
-    // クリックした瞬間にオーバーレイを表示
-    setIsPageLoading(true)
-  }
 
   // 認証ガード: ログインしていないユーザーをログイン画面へリダイレクト
   useEffect(() => {
@@ -141,25 +124,6 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-gray-50 flex-col md:flex-row pb-[env(safe-area-inset-bottom)] relative overflow-hidden">
-      {/* 
-        --- 即時オーバーレイ「シャッター遷移」レイヤー ---
-        ここがクリック即座に反応する部分です。
-      */}
-      <AnimatePresence>
-        {isPageLoading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[999] flex items-center justify-center bg-white/95 backdrop-blur-md"
-          >
-            <div className="transform -translate-y-12">
-              <LoadingCharacter />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <TopProgressBar isNavigating={isNavigating} />
       {/* 
          --- デスクトップ専用: 左サイドバー ---
@@ -171,7 +135,7 @@ export default function DashboardLayout({
           <div className="p-6 border-b border-gray-100 mb-2">
             <Link 
               href="/dashboard" 
-              onClick={() => handleLinkClick('/dashboard')}
+
               className="flex items-center gap-2.5 text-primary font-black text-xl tracking-tighter hover:opacity-80 transition-opacity"
             >
               <Sparkles className="w-6 h-6" />
@@ -191,7 +155,7 @@ export default function DashboardLayout({
                     key={item.href}
                     href={item.href}
                     prefetch={true}
-                    onClick={() => handleLinkClick(item.href)}
+
                     className={clsx(
                       "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-150",
                       isActive
@@ -218,7 +182,7 @@ export default function DashboardLayout({
                       key={item.href}
                       href={item.href}
                       prefetch={true}
-                      onClick={() => handleLinkClick(item.href)}
+
                       className={clsx(
                         "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150",
                         isActive
@@ -281,7 +245,7 @@ export default function DashboardLayout({
               key={item.href}
               href={item.href}
               prefetch={true}
-              onClick={() => handleLinkClick(item.href)}
+
               className={clsx(
                 "flex flex-col items-center justify-center flex-1 h-full space-y-1 transition-all duration-200 relative",
                 isActive ? "text-primary" : "text-gray-400"
