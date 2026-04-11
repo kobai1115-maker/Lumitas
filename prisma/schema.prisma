@@ -80,6 +80,7 @@ model Facility {
   division      Division?   @relation(fields: [divisionId], references: [id])
   address       String?
   phoneNumber   String?
+  type          String?
   email         String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
