@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerAuthUser } from '@/lib/auth-server'
+import { randomUUID } from 'crypto'
 
 async function checkAuth() {
   const { user } = await getServerAuthUser()
-  if (!user || user.role !== 'SYSTEM_ADMIN') {
+  if (!user || user.role !== 'DEVELOPER') {
     return null
   }
   return user
@@ -23,8 +24,8 @@ export async function GET(req: Request) {
     const facilities = await prisma.facility.findMany({
       where,
       include: {
-        corporation: { select: { name: true } },
-        _count: { select: { units: true, users: true } }
+        Corporation: { select: { name: true } },
+        _count: { select: { Unit: true, User: true } }
       },
       orderBy: { createdAt: 'desc' }
     })
@@ -49,15 +50,17 @@ export async function POST(req: Request) {
 
     const facility = await prisma.facility.create({
       data: {
+        id: randomUUID(),
         name,
         corporationId,
         divisionId: divisionId || null,
         address: address || null,
         phoneNumber: phoneNumber || null,
         email: email || null,
+        updatedAt: new Date(),
       },
       include: {
-        corporation: { select: { name: true } }
+        Corporation: { select: { name: true } }
       }
     })
 

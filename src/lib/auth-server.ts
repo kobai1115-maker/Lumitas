@@ -42,13 +42,13 @@ export async function getServerAuthUser() {
 
     // [開発用バイパス] デベロッパー用クッキーがある場合はモックユーザーを返す
     const devSession = cookieStore.get('axlink_dev_session')?.value
-    if (devSession === 'SYSTEM_ADMIN') {
+    if (devSession === 'DEVELOPER') {
       return { 
         user: { 
           id: 'dev-master', 
           staffId: 'developer', 
           fullName: '開発者特権アカウント', 
-          role: 'SYSTEM_ADMIN',
+          role: 'DEVELOPER',
           corporationId: null 
         }, 
         error: null 
@@ -89,14 +89,14 @@ export async function getServerAuthUser() {
  */
 export function getAccessScope(user: any) {
   // システム管理者は全範囲（フィルターなし）
-  if (user.role === 'SYSTEM_ADMIN') {
+  if (user.role === 'DEVELOPER') {
     return {}
   }
 
   const CORP_ID = user.corporationId
 
   // 法人管理者の場合は法人内すべて
-  if (user.role === 'ADMIN') {
+  if (user.role === 'MAIN_ADMIN') {
     return { corporationId: CORP_ID }
   }
 
@@ -105,4 +105,48 @@ export function getAccessScope(user: any) {
     corporationId: CORP_ID,
     facilityId: user.facilityId 
   }
+}
+
+/**
+ * 対象ユーザーへのアクセス権限があるか検証する
+ * @param currentUser ログイン中のユーザー
+ * @param targetUserId 操作対象のユーザーID
+ * @returns {Promise<boolean>}
+ */
+export async function canAccessTargetUser(currentUser: any, targetUserId: string): Promise<boolean> {
+  if (currentUser.id === targetUserId) return true;
+  if (currentUser.role === 'DEVELOPER' || currentUser.role === 'MAIN_ADMIN') return true;
+  
+  const targetUser = await (prisma as any).user.findUnique({
+    where: { id: targetUserId },
+    select: { corporationId: true, facilityId: true, reportsToId: true }
+  });
+
+  if (!targetUser) return false;
+
+  // 法人が異なる場合はアクセス不可
+  if (targetUser.corporationId !== currentUser.corporationId) return false;
+
+  if (currentUser.role === 'SUB_ADMIN') {
+    // 施設長などは自施設の全データにアクセス可能
+    return targetUser.facilityId === currentUser.facilityId;
+  }
+
+  if (currentUser.role === 'GENERAL') {
+    // 自身が直属の上司、または上位の上司であるかを確認（再帰的チェック）
+    let currentIdToCheck = targetUser.reportsToId;
+    const maxDepth = 10; // 組織階層の深さに応じて調整（通常は10回もあれば十分）
+    for (let i = 0; i < maxDepth; i++) {
+      if (!currentIdToCheck) break;
+      if (currentIdToCheck === currentUser.id) return true;
+      
+      const parent = await (prisma as any).user.findUnique({
+        where: { id: currentIdToCheck },
+        select: { reportsToId: true }
+      });
+      currentIdToCheck = parent?.reportsToId;
+    }
+  }
+
+  return false;
 }

@@ -13,7 +13,7 @@ export default function RoleBasedWidgets({ role, metrics }: Props) {
   // 職務ごとのウィジェット定義
   const renderWidgets = () => {
     switch (role) {
-      case 'STAFF_CAREGIVER':
+      case 'GENERAL':
         return (
           <>
             <WidgetCard title="読書・Off-JT達成状況" value={`${metrics.completionRate}%`} desc="目標: 100%" icon={ClipboardCheck} color="bg-indigo-50 text-indigo-600" href="/training" />
@@ -21,7 +21,7 @@ export default function RoleBasedWidgets({ role, metrics }: Props) {
             <WidgetCard title="身体介助スキル習熟度" value={`レベル ${metrics.skillLevel}`} desc="リーダー評価(1-5)" icon={Activity} color="bg-blue-50 text-blue-600" href="/evaluation" />
           </>
         )
-      case 'STAFF_NURSE':
+      case 'GENERAL':
         return (
           <>
             <WidgetCard title="医療的ケア実施件数" value={`${metrics.medicalCareCount || 0}件`} icon={Stethoscope} color="bg-red-50 text-red-500" href="/medical" />
@@ -29,7 +29,7 @@ export default function RoleBasedWidgets({ role, metrics }: Props) {
             <WidgetCard title="服薬エラーゼロ日数" value={`${metrics.zeroErrorDays || 0}日`} desc="継続中！" icon={ShieldCheck} color="bg-emerald-50 text-emerald-600" href="/safety" />
           </>
         )
-      case 'STAFF_SOCIAL_WORKER':
+      case 'GENERAL':
         return (
           <>
             <WidgetCard title="入退所調整完了数" value={`${metrics.coordinationCount || 0}件`} icon={Briefcase} color="bg-purple-50 text-purple-600" href="/coordination" />

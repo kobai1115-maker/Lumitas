@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { getServerAuthUser } from '@/lib/auth-server'
+import { getServerAuthUser, canAccessTargetUser } from '@/lib/auth-server'
 
 export async function GET(
   request: Request,
@@ -15,25 +15,17 @@ export async function GET(
     const { userId } = await params
 
     // [権限管理] 他人の評価レポート閲覧チェック
-    if (userId !== currentUser.id && currentUser.role !== 'ADMIN') {
-      if (currentUser.role === 'MANAGER') {
-        const targetUser = await (prisma.user as any).findFirst({
-          where: { id: userId, corporationId: currentUser.corporationId, facilityId: currentUser.facilityId }
-        })
-        if (!targetUser) {
-          return NextResponse.json({ error: '他施設の職員の評価情報は閲覧できません' }, { status: 403 })
-        }
-      } else {
-        return NextResponse.json({ error: '自分の評価情報以外の閲覧は禁止されています' }, { status: 403 })
-      }
+    const hasAccess = await canAccessTargetUser(currentUser, userId)
+    if (!hasAccess) {
+      return NextResponse.json({ error: '他職員の評価情報にアクセスする権限がありません' }, { status: 403 })
     }
 
     const targetUser = await prisma.user.findUnique({
       where: { id: userId },
       include: {
-        corporation: true,
-        facility: true,
-        position: true,
+        Corporation: true,
+        Facility: true,
+        Position: true,
       }
     })
 
@@ -44,7 +36,7 @@ export async function GET(
     return NextResponse.json({
       staff: {
         fullName: targetUser.fullName,
-        positionName: targetUser.position?.name || '一般職',
+        positionName: targetUser.Position?.name || '一般職',
         departmentName: targetUser.department || '未設定',
         gradeLevel: targetUser.gradeLevel,
         lastOneOnOneDate: '直近なし' // ここは将来的にOneOnOneNoteから最新日を取得するように拡張可能
@@ -57,8 +49,8 @@ export async function GET(
         team: 80
       },
       aiComment: `${targetUser.fullName}さんは、${targetUser.department}の一員として誠実に業務に励んでいます。`,
-      corpName: targetUser.corporation?.name || '社会福祉法人 萌佑会',
-      locationName: targetUser.facility?.name || '拠点未設定'
+      corpName: targetUser.Corporation?.name || '社会福祉法人 萌佑会',
+      locationName: targetUser.Facility?.name || '拠点未設定'
     })
 
   } catch (error) {

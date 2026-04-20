@@ -25,6 +25,7 @@ const TABLES = [
   'HealthLog',
   'OneOnOneNote',
   'TrainingRecord',
+  'Position',
 ];
 
 async function enableRLS() {

@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     }
 
     // [権限管理] 法人管理者以外は、自施設（または自部門）に関連する目標のみ
-    if (user.role !== 'ADMIN') {
+    if (user.role !== 'MAIN_ADMIN') {
       where.OR = [
         { facilityId: user.facilityId },
         { divisionId: user.divisionId },
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     }
 
     // [権限管理] 法人管理者以外は法人目標を作成できない
-    if (user.role !== 'ADMIN') {
+    if (user.role !== 'MAIN_ADMIN') {
       if (level === 'CORPORATION') {
         return NextResponse.json({ error: '法人目標の作成権限がありません' }, { status: 403 })
       }

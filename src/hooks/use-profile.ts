@@ -60,9 +60,9 @@ export function useProfile() {
   }, [])
 
   // 便利なショートカットプロパティ
-  const isSystemAdmin = (profile?.role as string) === 'SYSTEM_ADMIN'
-  const isCorpAdmin = (profile?.role as string) === 'ADMIN'
-  const isFacilityManager = (profile?.role as string) === 'MANAGER'
+  const isSystemAdmin = (profile?.role as string) === 'DEVELOPER'
+  const isCorpAdmin = (profile?.role as string) === 'MAIN_ADMIN'
+  const isFacilityManager = (profile?.role as string) === 'SUB_ADMIN'
   const isStaff = profile?.role?.startsWith('STAFF_')
 
   return {

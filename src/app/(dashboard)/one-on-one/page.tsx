@@ -124,7 +124,7 @@ export default function OneOnOnePage() {
               </p>
             </div>
           </div>
-          {(profile?.role === 'ADMIN' || profile?.role === 'MANAGER') && (
+          {(profile?.role === 'MAIN_ADMIN' || profile?.role === 'SUB_ADMIN') && (
             <Button size="sm" className="gap-1 rounded-xl font-black shadow-lg shadow-primary/20" onClick={() => setShowForm(!showForm)}>
               <Plus className="w-4 h-4" />記録を追加
             </Button>

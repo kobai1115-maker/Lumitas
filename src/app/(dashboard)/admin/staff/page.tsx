@@ -42,12 +42,12 @@ type Staff = {
 }
 
 const ROLE_CONFIG: Record<string, { label: string, color: string, icon: any, bg: string, text: string }> = {
-  'ADMIN': { label: '法人管理者', color: 'rose', icon: Shield, bg: 'bg-rose-50', text: 'text-rose-600' },
-  'MANAGER': { label: '施設長', color: 'indigo', icon: LayoutGrid, bg: 'bg-indigo-50', text: 'text-indigo-600' },
-  'STAFF_CAREGIVER': { label: '介護職', color: 'teal', icon: Heart, bg: 'bg-teal-50', text: 'text-teal-600' },
-  'STAFF_NURSE': { label: '看護職', color: 'blue', icon: Stethoscope, bg: 'bg-blue-50', text: 'text-blue-600' },
-  'STAFF_OFFICE': { label: '事務職', color: 'slate', icon: Briefcase, bg: 'bg-slate-50', text: 'text-slate-600' },
-  'STAFF_SOCIAL_WORKER': { label: '生活相談員', color: 'orange', icon: Users, bg: 'bg-orange-50', text: 'text-orange-600' },
+  'MAIN_ADMIN': { label: '法人管理者', color: 'rose', icon: Shield, bg: 'bg-rose-50', text: 'text-rose-600' },
+  'SUB_ADMIN': { label: '施設長', color: 'indigo', icon: LayoutGrid, bg: 'bg-indigo-50', text: 'text-indigo-600' },
+  'GENERAL': { label: '介護職', color: 'teal', icon: Heart, bg: 'bg-teal-50', text: 'text-teal-600' },
+  'GENERAL': { label: '看護職', color: 'blue', icon: Stethoscope, bg: 'bg-blue-50', text: 'text-blue-600' },
+  'GENERAL': { label: '事務職', color: 'slate', icon: Briefcase, bg: 'bg-slate-50', text: 'text-slate-600' },
+  'GENERAL': { label: '生活相談員', color: 'orange', icon: Users, bg: 'bg-orange-50', text: 'text-orange-600' },
 }
 
 export default function AdminStaffPage() {
@@ -76,7 +76,7 @@ export default function AdminStaffPage() {
     fullNameKana: '',
     email: '',
     department: '介護課',
-    role: 'STAFF_CAREGIVER',
+    role: 'GENERAL',
     gradeLevel: 1,
     birthday: '',
     hireDate: '',
@@ -149,7 +149,7 @@ export default function AdminStaffPage() {
         setIsAddDialogOpen(false)
         setFormData({
           staffId: '', fullName: '', fullNameKana: '', email: '', department: '介護課',
-          role: 'STAFF_CAREGIVER', gradeLevel: 1, birthday: '',
+          role: 'GENERAL', gradeLevel: 1, birthday: '',
           hireDate: '', yearsOfService: 0, experienceYears: 0,
           facilityId: selectedFacilityId
         })

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerAuthUser } from '@/lib/auth-server'
+import { randomUUID } from 'crypto'
 
 // 1. 組織ツリーの取得
 export async function GET(req: Request) {
@@ -9,13 +10,13 @@ export async function GET(req: Request) {
     if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // 権限チェック：SYSTEM_ADMIN または ADMIN/MANAGER 以上
-    if (!['SYSTEM_ADMIN', 'ADMIN', 'MANAGER'].includes(user.role)) {
+    if (!['DEVELOPER', 'MAIN_ADMIN', 'SUB_ADMIN'].includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // SYSTEM_ADMIN の場合はクエリパラメータから法人IDを取得可能にする
     const { searchParams } = new URL(req.url)
-    const targetCorpId = (user.role === 'SYSTEM_ADMIN' ? searchParams.get('corporationId') : null) || user.corporationId
+    const targetCorpId = (user.role === 'DEVELOPER' ? searchParams.get('corporationId') : null) || user.corporationId
 
     if (!targetCorpId) {
       return NextResponse.json({ error: '法人IDが指定されていません' }, { status: 400 })
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
     if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // 管理権限チェック
-    if (user.role !== 'SYSTEM_ADMIN' && user.role !== 'ADMIN') {
+    if (user.role !== 'DEVELOPER' && user.role !== 'MAIN_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
     const { items, type, name, parentId, corporationId: customCorpId } = body
     
     // 対象法人IDの決定
-    const targetCorpId = (user.role === 'SYSTEM_ADMIN' ? customCorpId : null) || user.corporationId
+    const targetCorpId = (user.role === 'DEVELOPER' ? customCorpId : null) || user.corporationId
     if (!targetCorpId) {
       return NextResponse.json({ error: '法人IDが不明です' }, { status: 400 })
     }
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
       switch (type) {
         case 'DIVISION':
           const newDiv = await prisma.division.create({
-            data: { name, corporationId: targetCorpId }
+            data: { id: randomUUID(), name, corporationId: targetCorpId, updatedAt: new Date() }
           })
           return NextResponse.json({ success: true, item: newDiv })
         
@@ -87,9 +88,11 @@ export async function POST(req: Request) {
           // parentId は DivisionId (または null)
           const newFac = await prisma.facility.create({
             data: { 
+              id: randomUUID(),
               name, 
               corporationId: targetCorpId,
-              divisionId: parentId || null
+              divisionId: parentId || null,
+              updatedAt: new Date()
             }
           })
           return NextResponse.json({ success: true, item: newFac })
@@ -98,7 +101,7 @@ export async function POST(req: Request) {
           // parentId は FacilityId (必須)
           if (!parentId) return NextResponse.json({ error: '施設IDが必要です' }, { status: 400 })
           const newUnit = await prisma.unit.create({
-            data: { name, facilityId: parentId }
+            data: { id: randomUUID(), name, facilityId: parentId, updatedAt: new Date() }
           })
           return NextResponse.json({ success: true, item: newUnit })
         
@@ -134,7 +137,7 @@ export async function POST(req: Request) {
           currentDivisionId = existingDiv.id
         } else {
           const newDiv = await prisma.division.create({
-            data: { name: divisionName, corporationId: targetCorpId }
+            data: { id: randomUUID(), name: divisionName, corporationId: targetCorpId, updatedAt: new Date() }
           })
           currentDivisionId = newDiv.id
           results.divisions++
@@ -155,9 +158,11 @@ export async function POST(req: Request) {
       } else {
         const newFac = await prisma.facility.create({
           data: { 
+            id: randomUUID(),
             name: facilityName, 
             corporationId: targetCorpId, 
-            divisionId: currentDivisionId 
+            divisionId: currentDivisionId,
+            updatedAt: new Date() 
           }
         })
         currentFacilityId = newFac.id
@@ -171,7 +176,7 @@ export async function POST(req: Request) {
         })
         if (!existingUnit) {
           await prisma.unit.create({
-            data: { name: unitName, facilityId: currentFacilityId }
+            data: { id: randomUUID(), name: unitName, facilityId: currentFacilityId, updatedAt: new Date() }
           })
           results.units++
         }

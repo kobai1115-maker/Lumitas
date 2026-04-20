@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerAuthUser, getAccessScope } from '@/lib/auth-server'
+import { randomUUID } from 'crypto'
 
 export async function GET() {
   try {
@@ -11,7 +12,7 @@ export async function GET() {
     }
 
     // [権限管理] 法人管理者以上のみ施設一覧の取得を許可
-    if (user.role !== 'SYSTEM_ADMIN' && user.role !== 'ADMIN') {
+    if (user.role !== 'DEVELOPER' && user.role !== 'MAIN_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -21,7 +22,7 @@ export async function GET() {
     const facilities = await (prisma as any).facility.findMany({
       where: scope.corporationId ? { corporationId: scope.corporationId } : {},
       include: {
-        corporation: {
+        Corporation: {
           select: { name: true }
         }
       },

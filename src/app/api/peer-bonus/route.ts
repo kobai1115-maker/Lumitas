@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     }
 
     // [権限管理] 法人管理者以外は、自施設内のやり取りのみ
-    if (user.role !== 'ADMIN') {
+    if (user.role !== 'MAIN_ADMIN') {
       where.facilityId = user.facilityId
     }
 

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerAuthUser } from '@/lib/auth-server'
+import { randomUUID } from 'crypto'
 
 // SYSTEM_ADMIN のみがアクセス可能
 async function checkAuth() {
   const { user } = await getServerAuthUser()
-  if (!user || user.role !== 'SYSTEM_ADMIN') {
+  if (!user || user.role !== 'DEVELOPER') {
     return null
   }
   return user
@@ -19,7 +20,7 @@ export async function GET() {
     const corporations = await prisma.corporation.findMany({
       include: {
         _count: {
-          select: { facilities: true, users: true }
+          select: { Facility: true, User: true }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
 
     const corporation = await prisma.corporation.create({
       data: {
+        id: randomUUID(),
         name,
         subdomain: subdomain || null,
         address: address || null,
@@ -52,6 +54,7 @@ export async function POST(req: Request) {
         representativeName: representativeName || null,
         email: email || null,
         isActive: true,
+        updatedAt: new Date(),
       }
     })
 

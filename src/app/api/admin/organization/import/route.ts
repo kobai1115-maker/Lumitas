@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     }
 
     // [認証管理] 管理者以上のみ許可
-    if (user.role !== 'SYSTEM_ADMIN' && user.role !== 'ADMIN') {
+    if (user.role !== 'DEVELOPER' && user.role !== 'MAIN_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

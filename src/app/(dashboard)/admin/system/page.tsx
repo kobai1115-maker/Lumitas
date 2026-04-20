@@ -11,6 +11,7 @@ import {
   Phone, 
   Mail, 
   User as UserIcon,
+  Users,
   ChevronRight,
   Loader2,
   ShieldCheck,
@@ -26,6 +27,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SystemRegisterModal } from '@/components/features/admin/system/SystemRegisterModal'
+import { BulkImportTab } from '@/components/features/admin/system/BulkImportTab'
 import { toast } from "sonner"
 import { clsx } from 'clsx'
 
@@ -145,7 +147,7 @@ export default function SystemAdminPage() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-        <TabsList className="mb-8 p-1.5 bg-gray-100/50 rounded-2xl h-auto self-start">
+        <TabsList className="mb-8 p-1.5 bg-gray-100/50 rounded-2xl h-auto self-start flex-wrap gap-2">
           <TabsTrigger value="corporations" className="px-8 py-3 rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:shadow-lg active:scale-95 transition-all">
             <Building2 className="w-4 h-4 mr-2" />
             法人管理
@@ -153,6 +155,10 @@ export default function SystemAdminPage() {
           <TabsTrigger value="facilities" className="px-8 py-3 rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:shadow-lg active:scale-95 transition-all">
             <MapPin className="w-4 h-4 mr-2" />
             拠点・施設管理
+          </TabsTrigger>
+          <TabsTrigger value="users-import" className="px-8 py-3 rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:shadow-lg active:scale-95 transition-all bg-indigo-50/50 text-indigo-900 border border-indigo-100/50 data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
+            <Users className="w-4 h-4 mr-2" />
+            ユーザー一括インポート
           </TabsTrigger>
         </TabsList>
 
@@ -259,6 +265,10 @@ export default function SystemAdminPage() {
               </motion.div>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="users-import" className="m-0">
+          <BulkImportTab corporations={corps} />
         </TabsContent>
       </Tabs>
     </div>

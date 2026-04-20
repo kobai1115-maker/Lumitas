@@ -37,8 +37,8 @@ export default function LoginPage() {
 
       if (cleanStaffId === 'developer' && cleanPassword === 'axlink2026') {
         console.warn('System Admin bypass: Logging in as developer')
-        // クッキーをセットしてサーバーサイドでも SYSTEM_ADMIN として認識させる
-        document.cookie = "axlink_dev_session=SYSTEM_ADMIN; path=/; max-age=3600"
+        // クッキーをセットしてサーバーサイドでも DEVELOPER として認識させる
+        document.cookie = "axlink_dev_session=DEVELOPER; path=/; max-age=3600"
         router.push('/admin/system')
         return
       }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { getServerAuthUser } from '@/lib/auth-server'
+import { getServerAuthUser, canAccessTargetUser } from '@/lib/auth-server'
 
 
 
@@ -16,17 +16,9 @@ export async function GET(req: Request) {
     const targetUserId = searchParams.get('userId') || user.id
 
     // [権限管理] 他人のデータ閲覧チェック
-    if (targetUserId !== user.id && user.role !== 'ADMIN') {
-      if (user.role === 'MANAGER') {
-        const targetUser = await (prisma.user as any).findFirst({
-          where: { id: targetUserId, corporationId: user.corporationId, facilityId: user.facilityId }
-        })
-        if (!targetUser) {
-          return NextResponse.json({ error: '他施設の職員の研修記録は閲覧できません' }, { status: 403 })
-        }
-      } else {
-        return NextResponse.json({ error: '自分の研修記録以外の閲覧は禁止されています' }, { status: 403 })
-      }
+    const hasAccess = await canAccessTargetUser(user, targetUserId)
+    if (!hasAccess) {
+      return NextResponse.json({ error: '他職員の研修記録にアクセスする権限がありません' }, { status: 403 })
     }
 
     const records = await (prisma.trainingRecord as any).findMany({
@@ -59,17 +51,9 @@ export async function POST(req: Request) {
     }
 
     // [権限管理] 登録権限チェック
-    if (targetUserId !== currentUser.id && currentUser.role !== 'ADMIN') {
-      if (currentUser.role === 'MANAGER') {
-        const targetUser = await (prisma.user as any).findFirst({
-          where: { id: targetUserId, corporationId: currentUser.corporationId, facilityId: currentUser.facilityId }
-        })
-        if (!targetUser) {
-          return NextResponse.json({ error: '他施設の職員の研修記録を登録する権限がありません' }, { status: 403 })
-        }
-      } else {
-        return NextResponse.json({ error: '自分以外の研修記録を登録する権限がありません' }, { status: 403 })
-      }
+    const hasAccess = await canAccessTargetUser(currentUser, targetUserId)
+    if (!hasAccess) {
+      return NextResponse.json({ error: '他職員の研修記録を登録する権限がありません' }, { status: 403 })
     }
 
     // ポイント設定... (略)

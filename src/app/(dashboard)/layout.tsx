@@ -110,10 +110,10 @@ export default function DashboardLayout({
     { name: '研修記録', href: '/training',    icon: BookOpen },
     { name: 'プラス活動', href: '/plus-activity', icon: Heart },
     { name: '組織目標', href: '/org-goals',   icon: Building2 },
-    { name: 'スタッフ管理', href: '/admin/staff', icon: Users, roles: ['SYSTEM_ADMIN', 'ADMIN', 'MANAGER'] },
-    { name: '組織管理', href: '/admin/organization', icon: Network, roles: ['SYSTEM_ADMIN', 'ADMIN'] },
-    { name: '職位・権限設定', href: '/admin/roles', icon: Settings2, roles: ['SYSTEM_ADMIN', 'ADMIN'] },
-    { name: '施設・拠点設定', href: '/admin/settings', icon: Settings, roles: ['SYSTEM_ADMIN', 'ADMIN'] },
+    { name: 'スタッフ管理', href: '/admin/staff', icon: Users, roles: ['DEVELOPER', 'MAIN_ADMIN', 'SUB_ADMIN'] },
+    { name: '組織管理', href: '/admin/organization', icon: Network, roles: ['DEVELOPER', 'MAIN_ADMIN'] },
+    { name: '職位・権限設定', href: '/admin/roles', icon: Settings2, roles: ['DEVELOPER', 'MAIN_ADMIN'] },
+    { name: '施設・拠点設定', href: '/admin/settings', icon: Settings, roles: ['DEVELOPER', 'MAIN_ADMIN'] },
   ]
 
   const filteredSubNav = subNavItems.filter(item => {

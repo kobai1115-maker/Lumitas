@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { getServerAuthUser } from '@/lib/auth-server'
+import { getServerAuthUser, canAccessTargetUser } from '@/lib/auth-server'
 
 // 1on1面談記録の一覧取得
 export async function GET(req: Request) {
@@ -16,9 +16,9 @@ export async function GET(req: Request) {
     }
 
     // [権限管理] 
-    if (user.role === 'ADMIN') {
+    if (user.role === 'MAIN_ADMIN') {
       // 法人管理者は制限なし
-    } else if (user.role === 'MANAGER') {
+    } else if (user.role === 'SUB_ADMIN') {
       // 施設長は、自施設内の全記録
       where.facilityId = user.facilityId
     } else {
@@ -33,8 +33,8 @@ export async function GET(req: Request) {
       where,
       orderBy: { meetingDate: 'desc' },
       include: {
-        employee: { select: { fullName: true, department: true, staffId: true } },
-        manager: { select: { fullName: true, staffId: true } }
+        User_OneOnOneNote_employeeIdToUser: { select: { fullName: true, department: true, staffId: true } },
+        User_OneOnOneNote_managerIdToUser: { select: { fullName: true, staffId: true } }
       }
     })
     return NextResponse.json(notes)
@@ -59,16 +59,12 @@ export async function POST(req: Request) {
     }
 
     // [権限管理] 実施者（マネージャー）の検証
-    const actualManagerId = (currentUser.role === 'ADMIN') ? requestedManagerId : currentUser.id;
+    const actualManagerId = (currentUser.role === 'MAIN_ADMIN') ? requestedManagerId : currentUser.id;
 
-    // [権限管理] 受講者が同じ施設に所属しているかチェック
-    if (currentUser.role !== 'ADMIN') {
-      const targetEmployee = await (prisma.user as any).findFirst({
-        where: { id: employeeId, corporationId: currentUser.corporationId, facilityId: currentUser.facilityId }
-      })
-      if (!targetEmployee) {
-        return NextResponse.json({ error: '他施設の職員の面談記録は作成できません' }, { status: 403 })
-      }
+    // [権限管理] 対象受講者へのアクセス権限チェック
+    const hasAccess = await canAccessTargetUser(currentUser, employeeId)
+    if (!hasAccess) {
+      return NextResponse.json({ error: '対象の職員の面談記録を作成する権限がありません' }, { status: 403 })
     }
 
     // 1. 面談記録を保存

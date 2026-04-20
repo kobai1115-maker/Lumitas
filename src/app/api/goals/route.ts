@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { getServerAuthUser } from '@/lib/auth-server'
+import { getServerAuthUser, canAccessTargetUser } from '@/lib/auth-server'
 import { analyzeGoalAlignment } from '@/lib/ai-goal-validator'
+import { randomUUID } from 'crypto'
 
 export async function GET(req: Request) {
   try {
@@ -14,18 +15,9 @@ export async function GET(req: Request) {
     const targetUserId = searchParams.get('userId') || user.id
 
     // [権限管理] 他人のデータ閲覧チェック
-    if (targetUserId !== user.id && user.role !== 'ADMIN') {
-      if (user.role === 'MANAGER') {
-        const targetUser = await prisma.user.findFirst({
-          // @ts-ignore
-          where: { id: targetUserId, corporationId: user.corporationId, facilityId: user.facilityId }
-        })
-        if (!targetUser) {
-          return NextResponse.json({ error: '他施設の職員の目標は閲覧できません' }, { status: 403 })
-        }
-      } else {
-        return NextResponse.json({ error: '自分の目標以外の閲覧は禁止されています' }, { status: 403 })
-      }
+    const hasAccess = await canAccessTargetUser(user, targetUserId)
+    if (!hasAccess) {
+      return NextResponse.json({ error: '他職員の目標データにアクセスする権限がありません' }, { status: 403 })
     }
 
     const goals = await (prisma.goal as any).findMany({ 
@@ -50,18 +42,9 @@ export async function POST(req: Request) {
     const targetUserId = body.userId || user.id
 
     // [権限管理] 目標作成権限チェック
-    if (targetUserId !== user.id && user.role !== 'ADMIN') {
-      if (user.role === 'MANAGER') {
-        const targetUser = await prisma.user.findFirst({
-          // @ts-ignore
-          where: { id: targetUserId, corporationId: user.corporationId, facilityId: user.facilityId }
-        })
-        if (!targetUser) {
-          return NextResponse.json({ error: '他施設の職員に目標を設定する権限がありません' }, { status: 403 })
-        }
-      } else {
-        return NextResponse.json({ error: '自分以外の目標を設定する権限がありません' }, { status: 403 })
-      }
+    const hasAccess = await canAccessTargetUser(user, targetUserId)
+    if (!hasAccess) {
+      return NextResponse.json({ error: '他職員に目標を設定する権限がありません' }, { status: 403 })
     }
 
     // 作成する目標に facilityId を紐付ける
@@ -84,6 +67,7 @@ export async function POST(req: Request) {
 
     const newGoal = await prisma.goal.create({
       data: {
+        id: randomUUID(),
         corporationId: user.corporationId,
         // @ts-ignore
         facilityId: targetUserRecord?.facilityId || user.facilityId,

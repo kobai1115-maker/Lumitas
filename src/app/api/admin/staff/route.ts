@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     }
 
     // [権限管理] 法人管理者以外は、自施設のデータのみに制限
-    if (user.role !== 'ADMIN') {
+    if (user.role !== 'MAIN_ADMIN') {
       where.facilityId = user.facilityId
     }
 
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
     }
 
     // [権限管理] 法人管理者以外は、他施設の職員を登録できない
-    if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SYSTEM_ADMIN') {
+    if (currentUser.role !== 'MAIN_ADMIN' && currentUser.role !== 'DEVELOPER') {
       if (targetFacilityId && targetFacilityId !== currentUser.facilityId) {
         return NextResponse.json({ error: '他施設の職員を登録する権限がありません' }, { status: 403 })
       }
@@ -150,6 +150,7 @@ export async function POST(req: Request) {
           divisionId: targetDivisionId || currentUser.divisionId,
           isActive: true,
           mustChangePassword: true,
+          updatedAt: new Date()
         }
       })
 

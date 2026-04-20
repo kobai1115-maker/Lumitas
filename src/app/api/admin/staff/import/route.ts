@@ -13,13 +13,17 @@ function getSupabaseAdmin() {
 
 // 日本語役職名から Role Enum へのマッピング
 const ROLE_MAP: Record<string, Role> = {
-  '法人管理者': 'ADMIN',
-  '施設長': 'MANAGER',
-  '介護職': 'STAFF_CAREGIVER',
-  '看護職': 'STAFF_NURSE',
-  '事務職': 'STAFF_OFFICE',
-  '生活相談員': 'STAFF_SOCIAL_WORKER',
-  'その他': 'STAFF_OTHER'
+  '法人管理者': 'MAIN_ADMIN',
+  '施設長': 'SUB_ADMIN',
+  '介護職': 'GENERAL',
+  '看護職': 'GENERAL',
+  '事務職': 'GENERAL',
+  '生活相談員': 'GENERAL',
+  '主任': 'GENERAL',
+  '副主任': 'GENERAL',
+  'リーダー': 'GENERAL',
+  '一般職': 'GENERAL',
+  'その他': 'GENERAL'
 }
 
 export async function POST(req: Request) {
@@ -31,7 +35,7 @@ export async function POST(req: Request) {
     }
 
     // [権限管理] 管理者以上のみ
-    if (user.role !== 'SYSTEM_ADMIN' && user.role !== 'ADMIN') {
+    if (user.role !== 'DEVELOPER' && user.role !== 'MAIN_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -101,7 +105,7 @@ export async function POST(req: Request) {
         }
 
         // 3. 役職の変換
-        const role = ROLE_MAP[roleName] || 'STAFF_CAREGIVER'
+        const role = ROLE_MAP[roleName] || 'GENERAL'
 
         // 4. Upsert (職員IDで一意に特定)
         const existingUser = await (prisma as any).user.findUnique({
