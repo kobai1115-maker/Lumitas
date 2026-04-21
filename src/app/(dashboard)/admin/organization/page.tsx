@@ -16,7 +16,9 @@ import {
   Users2,
   Loader2,
   Search,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Pencil,
+  Trash2
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -44,12 +46,13 @@ export default function AdminOrganizationPage() {
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({ 'root': true })
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   
-  // 登録モーダル用
   const [registerModal, setRegisterModal] = useState<{
     isOpen: boolean,
     type: OrgItemType | null,
     parentId: string | null,
-    parentName: string | null
+    parentName: string | null,
+    editId?: string | null,
+    initialName?: string
   }>({
     isOpen: false,
     type: null,
@@ -101,8 +104,38 @@ export default function AdminOrganizationPage() {
       isOpen: true,
       type,
       parentId: parentId === 'root' ? null : parentId,
-      parentName
+      parentName,
+      editId: null,
+      initialName: ''
     })
+  }
+
+  const handleEdit = (type: OrgItemType, id: string, name: string) => {
+    setRegisterModal({
+      isOpen: true,
+      type,
+      parentId: null,
+      parentName: null,
+      editId: id,
+      initialName: name
+    })
+  }
+
+  const handleDelete = async (type: OrgItemType, id: string, name: string) => {
+    if (!window.confirm(`本当に「${name}」を削除しますか？\n※関連するデータが存在する場合は削除できません。`)) return
+    
+    try {
+      const res = await fetch(`/api/admin/organization?type=${type}&id=${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        toast.success(`「${name}」を削除しました`)
+        fetchOrg()
+      } else {
+        const err = await res.json()
+        toast.error(err.error || '削除に失敗しました')
+      }
+    } catch {
+      toast.error('通信エラーが発生しました')
+    }
   }
 
   if (loading) {
@@ -160,6 +193,8 @@ export default function AdminOrganizationPage() {
         type={registerModal.type}
         parentId={registerModal.parentId}
         parentName={registerModal.parentName}
+        editId={registerModal.editId}
+        initialName={registerModal.initialName}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -196,6 +231,8 @@ export default function AdminOrganizationPage() {
                     isExpanded={expandedItems[div.id]}
                     onToggle={() => toggleExpand(div.id)}
                     onAdd={() => openRegisterModal('FACILITY', div.id, div.name)}
+                    onEdit={() => handleEdit('DIVISION', div.id, div.name)}
+                    onDelete={() => handleDelete('DIVISION', div.id, div.name)}
                     badge="部門"
                   >
                     {div.facilities.map(fac => (
@@ -208,6 +245,8 @@ export default function AdminOrganizationPage() {
                         isExpanded={expandedItems[fac.id]}
                         onToggle={() => toggleExpand(fac.id)}
                         onAdd={() => openRegisterModal('UNIT', fac.id, fac.name)}
+                        onEdit={() => handleEdit('FACILITY', fac.id, fac.name)}
+                        onDelete={() => handleDelete('FACILITY', fac.id, fac.name)}
                         badge="事業所"
                       >
                          {fac.units.map(unit => (
@@ -217,6 +256,8 @@ export default function AdminOrganizationPage() {
                              label={unit.name} 
                              level={3} 
                              icon={Users2}
+                             onEdit={() => handleEdit('UNIT', unit.id, unit.name)}
+                             onDelete={() => handleDelete('UNIT', unit.id, unit.name)}
                              badge="ユニット"
                            />
                          ))}
@@ -236,6 +277,8 @@ export default function AdminOrganizationPage() {
                     isExpanded={expandedItems[fac.id]}
                     onToggle={() => toggleExpand(fac.id)}
                     onAdd={() => openRegisterModal('UNIT', fac.id, fac.name)}
+                    onEdit={() => handleEdit('FACILITY', fac.id, fac.name)}
+                    onDelete={() => handleDelete('FACILITY', fac.id, fac.name)}
                     badge="事業所 (直轄)"
                   >
                     {fac.units.map(unit => (
@@ -245,6 +288,8 @@ export default function AdminOrganizationPage() {
                         label={unit.name} 
                         level={2} 
                         icon={Users2}
+                        onEdit={() => handleEdit('UNIT', unit.id, unit.name)}
+                        onDelete={() => handleDelete('UNIT', unit.id, unit.name)}
                         badge="ユニット"
                       />
                     ))}
@@ -300,6 +345,8 @@ function TreeItem({
   isExpanded?: boolean,
   onToggle?: () => void,
   onAdd?: () => void,
+  onEdit?: () => void,
+  onDelete?: () => void,
   badge?: string
 }) {
   const hasChildren = !!children && Array.isArray(children) ? children.length > 0 : !!children
@@ -333,7 +380,7 @@ function TreeItem({
           {badge && <Badge variant="secondary" className="text-[9px] font-black uppercase tracking-widest py-0 px-2 opacity-50 shrink-0">{badge}</Badge>}
         </div>
         
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
           {onAdd && (
             <Button 
               variant="ghost" 
@@ -345,6 +392,32 @@ function TreeItem({
               }}
             >
               <Plus className="w-3.5 h-3.5 text-gray-400" />
+            </Button>
+          )}
+          {onEdit && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 rounded-lg hover:bg-white hover:shadow-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
+              <Pencil className="w-3.5 h-3.5 text-blue-400" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 rounded-lg hover:bg-white hover:shadow-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
             </Button>
           )}
         </div>

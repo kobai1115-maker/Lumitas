@@ -57,20 +57,22 @@ async function registerAdmin() {
         id: userId,
         fullName: fullName,
         staffId: staffId,
-        role: 'SYSTEM_ADMIN',
+        role: 'DEVELOPER',
         department: 'システム管理',
         isActive: true,
-        mustChangePassword: false // 今回はテスト用なのでfalseに設定
+        mustChangePassword: false,
+        updatedAt: new Date()
       },
       create: {
         id: userId,
         email: email,
         fullName: fullName,
         staffId: staffId,
-        role: 'SYSTEM_ADMIN',
+        role: 'DEVELOPER',
         department: 'システム管理',
         isActive: true,
-        mustChangePassword: false
+        mustChangePassword: false,
+        updatedAt: new Date()
       }
     });
 

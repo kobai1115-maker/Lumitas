@@ -51,7 +51,7 @@ type Corporation = {
 type Facility = {
   id: string
   name: string
-  corporation: { name: string }
+  Corporation?: { name: string } | null
   address?: string
   phoneNumber?: string
   email?: string
@@ -61,25 +61,39 @@ type Facility = {
   }
 }
 
+type User = {
+  id: string
+  fullName: string
+  email: string
+  staffId: string
+  corporationId: string | null
+  Corporation?: { name: string } | null
+  createdAt: string
+}
+
 export default function SystemAdminPage() {
   const [corps, setCorps] = useState<Corporation[]>([])
   const [facilities, setFacilities] = useState<Facility[]>([])
+  const [mainAdmins, setMainAdmins] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('corporations')
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false)
+  const [editCorpData, setEditCorpData] = useState<Corporation | null>(null)
 
   // データ取得
   async function fetchData() {
     setLoading(true)
     try {
-      const [corpsRes, facsRes] = await Promise.all([
+      const [corpsRes, facsRes, adminsRes] = await Promise.all([
         fetch('/api/admin/system/corporations'),
-        fetch('/api/admin/system/facilities')
+        fetch('/api/admin/system/facilities'),
+        fetch('/api/admin/system/users?role=MAIN_ADMIN')
       ])
       
-      if (corpsRes.ok) setCorps(await corpsRes.ok ? await corpsRes.json() : [])
-      if (facsRes.ok) setFacilities(await facsRes.ok ? await facsRes.json() : [])
+      if (corpsRes.ok) setCorps(await corpsRes.json())
+      if (facsRes.ok) setFacilities(await facsRes.json())
+      if (adminsRes.ok) setMainAdmins(await adminsRes.json())
     } catch (err) {
       toast.error('データの取得に失敗しました')
     } finally {
@@ -87,12 +101,28 @@ export default function SystemAdminPage() {
     }
   }
 
+  const handleDeleteCorp = async (id: string, name: string) => {
+    if (!confirm(`法人「${name}」を削除(無効化)しますか？この操作により関連データへのアクセスが制限されます。`)) return
+    try {
+      const res = await fetch(`/api/admin/system/corporations?id=${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        toast.success(`法人「${name}」を削除しました`)
+        fetchData()
+      } else {
+        toast.error('法人の削除に失敗しました')
+      }
+    } catch (err) {
+      toast.error('通信エラーが発生しました')
+    }
+  }
+
   useEffect(() => {
     fetchData()
   }, [])
 
-  const filteredCorps = corps.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-  const filteredFacs = facilities.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()) || f.corporation.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredCorps = corps.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) && c.isActive)
+  const filteredFacs = facilities.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()) || (f.Corporation?.name || '').toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredAdmins = mainAdmins.filter(a => a.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || (a.Corporation?.name || '').toLowerCase().includes(searchQuery.toLowerCase()))
 
   if (loading) {
     return (
@@ -141,9 +171,13 @@ export default function SystemAdminPage() {
 
       <SystemRegisterModal 
         isOpen={isRegisterModalOpen} 
-        onClose={() => setIsRegisterModalOpen(false)}
+        onClose={() => {
+          setIsRegisterModalOpen(false)
+          setEditCorpData(null)
+        }}
         onSuccess={fetchData}
         corporations={corps.map(c => ({ id: c.id, name: c.name }))}
+        editCorpData={editCorpData}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
@@ -155,6 +189,10 @@ export default function SystemAdminPage() {
           <TabsTrigger value="facilities" className="px-8 py-3 rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:shadow-lg active:scale-95 transition-all">
             <MapPin className="w-4 h-4 mr-2" />
             拠点・施設管理
+          </TabsTrigger>
+          <TabsTrigger value="main_admins" className="px-8 py-3 rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:shadow-lg active:scale-95 transition-all">
+            <ShieldCheck className="w-4 h-4 mr-2" />
+            メイン管理者
           </TabsTrigger>
           <TabsTrigger value="users-import" className="px-8 py-3 rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:shadow-lg active:scale-95 transition-all bg-indigo-50/50 text-indigo-900 border border-indigo-100/50 data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
             <Users className="w-4 h-4 mr-2" />
@@ -188,9 +226,27 @@ export default function SystemAdminPage() {
                           </CardTitle>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="rounded-xl hover:bg-gray-50">
-                        <Settings2 className="w-5 h-5 text-gray-400" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="rounded-xl hover:bg-gray-50"
+                          onClick={() => {
+                            setEditCorpData(corp)
+                            setIsRegisterModalOpen(true)
+                          }}
+                        >
+                          <Settings2 className="w-5 h-5 text-gray-400" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="rounded-xl hover:bg-rose-50 hover:text-rose-500"
+                          onClick={() => handleDeleteCorp(corp.id, corp.name)}
+                        >
+                          <MoreVertical className="w-5 h-5 text-gray-400" />
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-8 pt-4 space-y-6">
@@ -243,7 +299,7 @@ export default function SystemAdminPage() {
                           <MapPin className="w-5 h-5" />
                         </div>
                         <Badge variant="secondary" className="rounded-lg font-black text-[9px] uppercase tracking-widest py-0 px-2 opacity-60">
-                           {fac.corporation.name}
+                           {fac.Corporation?.name || '無所属'}
                         </Badge>
                      </div>
                      <CardTitle className="text-xl font-black tracking-tight text-gray-900 truncate">
@@ -264,6 +320,42 @@ export default function SystemAdminPage() {
                 </Card>
               </motion.div>
             ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="main_admins" className="m-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredAdmins.map((admin) => (
+              <motion.div key={admin.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="group">
+                <Card className="border-none shadow-xl shadow-gray-100 rounded-[2rem] bg-white overflow-hidden hover:shadow-2xl transition-all duration-500 border border-transparent hover:border-primary/10">
+                  <CardHeader className="p-6">
+                     <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors">
+                          <ShieldCheck className="w-5 h-5" />
+                        </div>
+                        <Badge variant="secondary" className="rounded-lg font-black text-[9px] uppercase tracking-widest py-0 px-2 opacity-60">
+                           {admin.Corporation?.name || '無所属'}
+                        </Badge>
+                     </div>
+                     <CardTitle className="text-xl font-black tracking-tight text-gray-900 truncate">
+                        {admin.fullName}
+                     </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 pt-0 space-y-4">
+                     <div className="space-y-2">
+                        <DetailRow icon={Mail} value={admin.email} small />
+                        <DetailRow icon={UserIcon} value={`スタッフID: ${admin.staffId}`} small />
+                     </div>
+                     <Button variant="ghost" className="w-full justify-center h-12 rounded-xl font-bold text-gray-500 hover:text-amber-600 hover:bg-amber-50 group/btn">
+                        権限・活動状況を確認
+                     </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+            {filteredAdmins.length === 0 && (
+              <div className="col-span-full py-12 text-center text-gray-400 font-bold">メイン管理者が見つかりません。</div>
+            )}
           </div>
         </TabsContent>
 

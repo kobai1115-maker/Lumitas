@@ -62,20 +62,22 @@ async function registerDevAccount() {
         id: userId,
         fullName: fullName,
         staffId: staffId,
-        role: 'SYSTEM_ADMIN',
+        role: 'DEVELOPER',
         department: 'システム開発',
         isActive: true,
-        mustChangePassword: false
+        mustChangePassword: false,
+        updatedAt: new Date()
       },
       create: {
         id: userId,
         email: email,
         fullName: fullName,
         staffId: staffId,
-        role: 'SYSTEM_ADMIN',
+        role: 'DEVELOPER',
         department: 'システム開発',
         isActive: true,
-        mustChangePassword: false
+        mustChangePassword: false,
+        updatedAt: new Date()
       }
     });
 

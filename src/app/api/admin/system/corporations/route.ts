@@ -64,3 +64,64 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '法人情報の登録に失敗しました' }, { status: 500 })
   }
 }
+
+export async function PATCH(req: Request) {
+  const user = await checkAuth()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const body = await req.json()
+    const { id, name, subdomain, address, phoneNumber, representativeName, email, isActive } = body
+
+    if (!id) {
+      return NextResponse.json({ error: '法人IDは必須です' }, { status: 400 })
+    }
+
+    const corporation = await prisma.corporation.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(subdomain !== undefined && { subdomain }),
+        ...(address !== undefined && { address }),
+        ...(phoneNumber !== undefined && { phoneNumber }),
+        ...(representativeName !== undefined && { representativeName }),
+        ...(email !== undefined && { email }),
+        ...(isActive !== undefined && { isActive }),
+        updatedAt: new Date(),
+      }
+    })
+
+    return NextResponse.json(corporation)
+  } catch (error) {
+    console.error('PATCH /api/admin/system/corporations error:', error)
+    return NextResponse.json({ error: '法人情報の更新に失敗しました' }, { status: 500 })
+  }
+}
+
+export async function DELETE(req: Request) {
+  const user = await checkAuth()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const { searchParams } = new URL(req.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: '法人IDは必須です' }, { status: 400 })
+    }
+
+    // 論理削除
+    const corporation = await prisma.corporation.update({
+      where: { id },
+      data: {
+        isActive: false,
+        updatedAt: new Date()
+      }
+    })
+
+    return NextResponse.json({ success: true, corporation })
+  } catch (error) {
+    console.error('DELETE /api/admin/system/corporations error:', error)
+    return NextResponse.json({ error: '法人情報の削除に失敗しました' }, { status: 500 })
+  }
+}

@@ -63,10 +63,10 @@ export async function getServerAuthUser() {
     const user = await (prisma.user as any).findUnique({
       where: { id: session.user.id },
       include: {
-        corporation: true,
-        facility: true,
-        division: true,
-        unit: true
+        Corporation: true,
+        Facility: true,
+        Division: true,
+        Unit: true
       }
     })
 

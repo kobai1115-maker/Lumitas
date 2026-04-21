@@ -189,3 +189,69 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '組織データの更新に失敗しました' }, { status: 500 })
   }
 }
+
+// 3. 組織アイテムの編集
+export async function PATCH(req: Request) {
+  try {
+    const { user, error } = await getServerAuthUser()
+    if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'DEVELOPER' && user.role !== 'MAIN_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    const { type, id, name } = await req.json()
+    if (!type || !id || !name) return NextResponse.json({ error: '必須パラメータが不足しています' }, { status: 400 })
+
+    switch (type) {
+      case 'DIVISION':
+        await prisma.division.update({ where: { id }, data: { name, updatedAt: new Date() } })
+        break
+      case 'FACILITY':
+        await prisma.facility.update({ where: { id }, data: { name, updatedAt: new Date() } })
+        break
+      case 'UNIT':
+        await prisma.unit.update({ where: { id }, data: { name, updatedAt: new Date() } })
+        break
+      default:
+        return NextResponse.json({ error: '無効な種別です' }, { status: 400 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('PATCH /api/admin/organization error:', error)
+    return NextResponse.json({ error: '更新に失敗しました' }, { status: 500 })
+  }
+}
+
+// 4. 組織アイテムの削除
+export async function DELETE(req: Request) {
+  try {
+    const { user, error } = await getServerAuthUser()
+    if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'DEVELOPER' && user.role !== 'MAIN_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    const { searchParams } = new URL(req.url)
+    const type = searchParams.get('type')
+    const id = searchParams.get('id')
+
+    if (!type || !id) return NextResponse.json({ error: '必須パラメータが不足しています' }, { status: 400 })
+
+    switch (type) {
+      case 'DIVISION':
+        await prisma.division.delete({ where: { id } })
+        break
+      case 'FACILITY':
+        await prisma.facility.delete({ where: { id } })
+        break
+      case 'UNIT':
+        await prisma.unit.delete({ where: { id } })
+        break
+      default:
+        return NextResponse.json({ error: '無効な種別です' }, { status: 400 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('DELETE /api/admin/organization error:', error)
+    // 外部キー制約等のエラーハンドリング
+    return NextResponse.json({ error: '削除に失敗しました（関連するデータが存在する可能性があります）' }, { status: 500 })
+  }
+}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Dialog, 
   DialogContent, 
@@ -24,17 +24,26 @@ type Props = {
   type: OrgItemType | null
   parentId: string | null
   parentName: string | null
+  editId?: string | null
+  initialName?: string
 }
 
 const TYPE_CONFIG = {
-  DIVISION: { label: '部門', icon: Layers, description: '法人直下の組織（例：特養部門、在宅部門）を追加します。' },
-  FACILITY: { label: '事業所', icon: Building2, description: 'サービス提供の拠点となる施設を追加します。' },
-  UNIT: { label: 'ユニット・部署', icon: Users2, description: '事業所内の具体的なチームやフロアを追加します。' }
+  DIVISION: { label: '部門', icon: Layers, description: '法人直下の組織（例：特養部門、在宅部門）を管理します。' },
+  FACILITY: { label: '事業所', icon: Building2, description: 'サービス提供の拠点となる施設を管理します。' },
+  UNIT: { label: 'ユニット・部署', icon: Users2, description: '事業所内の具体的なチームやフロアを管理します。' }
 }
 
-export function OrgItemRegisterModal({ isOpen, onClose, onSuccess, type, parentId, parentName }: Props) {
-  const [name, setName] = useState('')
+export function OrgItemRegisterModal({ isOpen, onClose, onSuccess, type, parentId, parentName, editId, initialName }: Props) {
+  const [name, setName] = useState(initialName || '')
   const [loading, setLoading] = useState(false)
+
+  // isOpenが変更されたときに初期値をリセット
+  useEffect(() => {
+    if (isOpen) {
+      setName(initialName || '')
+    }
+  }, [isOpen, initialName])
 
   const config = type ? TYPE_CONFIG[type] : null
   const Icon = config?.icon || Plus
@@ -45,14 +54,20 @@ export function OrgItemRegisterModal({ isOpen, onClose, onSuccess, type, parentI
     
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/organization', {
-        method: 'POST',
+      const isEdit = !!editId
+      const url = '/api/admin/organization'
+      const payload = isEdit 
+        ? { type, id: editId, name } 
+        : { type, name, parentId }
+
+      const res = await fetch(url, {
+        method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, name, parentId })
+        body: JSON.stringify(payload)
       })
 
       if (res.ok) {
-        toast.success(`${config?.label} 「${name}」を登録しました`)
+        toast.success(`${config?.label} 「${name}」を${editId ? '更新' : '登録'}しました`)
         setName('')
         onSuccess()
         onClose()
@@ -78,7 +93,7 @@ export function OrgItemRegisterModal({ isOpen, onClose, onSuccess, type, parentI
               <Icon className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-2xl font-black">{config.label}の追加</DialogTitle>
+              <DialogTitle className="text-2xl font-black">{config.label}の{editId ? '編集' : '追加'}</DialogTitle>
               <DialogDescription className="text-white/40 font-bold">
                 {config.description}
               </DialogDescription>
@@ -124,7 +139,7 @@ export function OrgItemRegisterModal({ isOpen, onClose, onSuccess, type, parentI
                 className="flex-1 h-12 rounded-xl bg-gray-900 text-white font-black hover:bg-gray-800 disabled:bg-gray-200"
                 disabled={loading || !name.trim()}
              >
-               {loading ? <Loader2 className="animate-spin mr-2" /> : `${config.label}を登録`}
+               {loading ? <Loader2 className="animate-spin mr-2" /> : `${config.label}を${editId ? '更新' : '登録'}`}
              </Button>
           </DialogFooter>
         </form>
