@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { cookies } from 'next/headers'
 // @ts-ignore
 import { createServerClient } from '@supabase/auth-helpers-nextjs'
@@ -7,7 +8,7 @@ import prisma from '@/lib/prisma'
  * ログインユーザーのプロファイルを Prisma から取得するサーバーサイド用ヘルパー
  * @returns {Promise<{ user: any, error: any }>}
  */
-export async function getServerAuthUser() {
+export const getServerAuthUser = cache(async () => {
   try {
     const cookieStore = await cookies()
     
@@ -63,10 +64,10 @@ export async function getServerAuthUser() {
     const user = await (prisma.user as any).findUnique({
       where: { id: session.user.id },
       include: {
-        Corporation: true,
-        Facility: true,
-        Division: true,
-        Unit: true
+        corporation: true,
+        facility: true,
+        division: true,
+        unit: true
       }
     })
 
@@ -80,7 +81,7 @@ export async function getServerAuthUser() {
     console.error('getServerAuthUser error:', err)
     return { user: null, error: 'Internal Server Error' }
   }
-}
+})
 
 /**
  * 権限（Role）チェックと施設フィルタ用のクエリ条件を生成するヘルパー

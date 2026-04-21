@@ -20,7 +20,6 @@ import {
   Pencil,
   Trash2
 } from 'lucide-react'
-import * as XLSX from 'xlsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { OrganizationImportModal } from '@/components/features/admin/OrganizationImportModal'
@@ -61,7 +60,8 @@ export default function AdminOrganizationPage() {
   })
 
   // テンプレートダウンロード機能
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
+    const XLSX = await import('xlsx')
     const data = [
       { '部門名': '入所部', '事業所名': 'A特別養護老人ホーム', 'ユニット名': '1Fさくら' },
       { '部門名': '入所部', '事業所名': 'A特別養護老人ホーム', 'ユニット名': '2Fひまわり' },

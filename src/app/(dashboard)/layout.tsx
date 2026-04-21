@@ -45,7 +45,6 @@ export default function DashboardLayout({
 
   // 認証ガード: ログインしていないユーザーをログイン画面へリダイレクト
   useEffect(() => {
-    let mounted = true
     const checkAuth = async () => {
       try {
         // API（profile）を待つだけでなく、まずクライアント側のセッションを直接確認
@@ -73,23 +72,8 @@ export default function DashboardLayout({
       }
     }
     
-    // 認証状態の変化を監視（ログイン成功時などに再取得）
-    // @ts-ignore
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, _session) => {
-      console.log('--- Auth Event ---', event)
-      if (mounted) {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          refresh()
-        }
-      }
-    })
-    
     checkAuth()
-    return () => {
-      mounted = false
-      subscription.unsubscribe()
-    }
-  }, [loading, profile, router, refresh])
+  }, [loading, profile, router])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()

@@ -17,13 +17,12 @@ async function main() {
         email,
         fullName,
         staffId,
-        role: 'DEVELOPER',
+        role: 'SYSTEM_ADMIN',
         department: 'Development/Operations',
         gradeLevel: 7,
         mustChangePassword: true,
         // corporationId は Optional になったため、null で作成
-        corporationId: null,
-        updatedAt: new Date()
+        corporationId: null 
       }
     })
 

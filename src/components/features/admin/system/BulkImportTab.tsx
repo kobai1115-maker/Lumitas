@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Upload, Users, AlertCircle, CheckCircle2, ChevronRight, X, Loader2 } from 'lucide-react'
-import * as xlsx from 'xlsx'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -46,8 +45,9 @@ export function BulkImportTab({ corporations }: { corporations: Corporation[] })
 
     setIsUploading(true)
     const reader = new FileReader()
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
+        const xlsx = await import('xlsx')
         const data = new Uint8Array(event.target?.result as ArrayBuffer)
         const workbook = xlsx.read(data, { type: 'array' })
         const sheetName = workbook.SheetNames[0]

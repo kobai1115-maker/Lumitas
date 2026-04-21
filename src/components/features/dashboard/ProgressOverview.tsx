@@ -12,14 +12,14 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { motion } from 'framer-motion'
-import {
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  ResponsiveContainer,
-  PolarRadiusAxis,
-} from 'recharts'
+import dynamic from 'next/dynamic'
+
+const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false })
+const RadarChart = dynamic(() => import('recharts').then(mod => mod.RadarChart), { ssr: false })
+const Radar = dynamic(() => import('recharts').then(mod => mod.Radar), { ssr: false })
+const PolarGrid = dynamic(() => import('recharts').then(mod => mod.PolarGrid), { ssr: false })
+const PolarAngleAxis = dynamic(() => import('recharts').then(mod => mod.PolarAngleAxis), { ssr: false })
+const PolarRadiusAxis = dynamic(() => import('recharts').then(mod => mod.PolarRadiusAxis), { ssr: false })
 import { clsx } from 'clsx'
 
 type ScoreData = {
@@ -124,7 +124,7 @@ export default function ProgressOverview({ scoreData }: Props) {
         {/* 以下、Dialog部分 */}
         {/* 業績 */}
         <Dialog>
-          <DialogTrigger nativeButton={false} render={
+          <DialogTrigger asChild>
             <Card className="shadow-md hover:ring-2 hover:ring-blue-500/20 hover:bg-blue-50/10 cursor-pointer transition-all active:scale-95 group border-gray-100">
               <CardHeader className="p-3 pb-1">
                 <CardTitle className="text-[10px] font-black text-gray-400 flex items-center gap-1 group-hover:text-blue-600 transition-colors uppercase tracking-tight">
@@ -139,7 +139,7 @@ export default function ProgressOverview({ scoreData }: Props) {
                 </div>
               </CardContent>
             </Card>
-          } />
+          </DialogTrigger>
           <DialogContent className="max-w-[90vw] sm:max-w-md bg-blue-50/95 border-blue-200 backdrop-blur-md">
             <DialogHeader className="flex flex-col items-center text-center">
               <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2 shadow-lg shadow-blue-200">
@@ -169,7 +169,7 @@ export default function ProgressOverview({ scoreData }: Props) {
 
         {/* 能力 */}
         <Dialog>
-          <DialogTrigger nativeButton={false} render={
+          <DialogTrigger asChild>
             <Card className="shadow-md hover:ring-2 hover:ring-emerald-500/20 hover:bg-emerald-50/10 cursor-pointer transition-all active:scale-95 group border-gray-100">
               <CardHeader className="p-3 pb-1">
                 <CardTitle className="text-[10px] font-black text-gray-400 flex items-center gap-1 group-hover:text-emerald-600 transition-colors uppercase tracking-tight">
@@ -184,7 +184,7 @@ export default function ProgressOverview({ scoreData }: Props) {
                 </div>
               </CardContent>
             </Card>
-          } />
+          </DialogTrigger>
           <DialogContent className="max-w-[90vw] sm:max-w-md bg-emerald-50/95 border-emerald-200 backdrop-blur-md">
             <DialogHeader className="flex flex-col items-center text-center">
               <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mb-2 shadow-lg shadow-emerald-200">
@@ -214,7 +214,7 @@ export default function ProgressOverview({ scoreData }: Props) {
 
         {/* 情意 */}
         <Dialog>
-          <DialogTrigger nativeButton={false} render={
+          <DialogTrigger asChild>
             <Card className="shadow-md hover:ring-2 hover:ring-rose-500/20 hover:bg-rose-50/10 cursor-pointer transition-all active:scale-95 group border-gray-100">
               <CardHeader className="p-3 pb-1">
                 <CardTitle className="text-[10px] font-black text-gray-400 flex items-center gap-1 group-hover:text-rose-600 transition-colors uppercase tracking-tight">
@@ -229,7 +229,7 @@ export default function ProgressOverview({ scoreData }: Props) {
                 </div>
               </CardContent>
             </Card>
-          } />
+          </DialogTrigger>
           <DialogContent className="max-w-[90vw] sm:max-w-md bg-rose-50/95 border-rose-200 backdrop-blur-md">
             <DialogHeader className="flex flex-col items-center text-center">
               <div className="w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center mb-2 shadow-lg shadow-rose-200">

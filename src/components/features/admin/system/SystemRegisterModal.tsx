@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { 
   Dialog, 
   DialogContent, 
@@ -22,24 +22,13 @@ type Props = {
   onClose: () => void
   onSuccess: () => void
   corporations: { id: string, name: string }[]
-  editCorpData?: Corporation | null
 }
 
-type Corporation = {
-  id?: string
-  name: string
-  subdomain?: string
-  address?: string
-  phoneNumber?: string
-  representativeName?: string
-  email?: string
-}
-
-export function SystemRegisterModal({ isOpen, onClose, onSuccess, corporations, editCorpData }: Props) {
+export function SystemRegisterModal({ isOpen, onClose, onSuccess, corporations }: Props) {
   const [activeTab, setActiveTab] = useState('corporation')
   const [loading, setLoading] = useState(false)
 
-  const [corpData, setCorpData] = useState<Corporation>({
+  const [corpData, setCorpData] = useState({
     name: '', subdomain: '', address: '', phoneNumber: '', representativeName: '', email: ''
   })
 
@@ -47,61 +36,33 @@ export function SystemRegisterModal({ isOpen, onClose, onSuccess, corporations, 
     name: '', corporationId: '', address: '', phoneNumber: '', email: ''
   })
 
-  const [adminData, setAdminData] = useState({
-    corporationId: '', staffId: '', fullName: '', email: '', password: ''
-  })
-
-  // 編集データが渡されたら初期化
-  useEffect(() => {
-    if (editCorpData) {
-      setCorpData(editCorpData)
-      setActiveTab('corporation')
-    } else {
-      setCorpData({ name: '', subdomain: '', address: '', phoneNumber: '', representativeName: '', email: '' })
-    }
-  }, [editCorpData, isOpen])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
-    let url = ''
-    let method = 'POST'
-    let body: any = {}
-
-    if (activeTab === 'corporation') {
-      url = '/api/admin/system/corporations'
-      body = corpData
-      if (corpData.id) method = 'PATCH'
-    } else if (activeTab === 'facility') {
-      url = '/api/admin/system/facilities'
-      body = facData
-    } else if (activeTab === 'main_admin') {
-      url = '/api/admin/system/users'
-      body = adminData
-    }
+    const url = activeTab === 'corporation' ? '/api/admin/system/corporations' : '/api/admin/system/facilities'
+    const body = activeTab === 'corporation' ? corpData : facData
     
     try {
       const res = await fetch(url, {
-        method,
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       })
 
       if (res.ok) {
-        toast.success(`処理が完了しました`)
+        toast.success(`${activeTab === 'corporation' ? '法人' : '拠点'}を登録しました`)
         onSuccess()
         onClose()
       } else {
         const err = await res.json()
-        toast.error(err.error || '処理に失敗しました')
+        toast.error(err.error || '登録に失敗しました')
       }
     } catch (err) {
       toast.error('通信エラーが発生しました')
     } finally {
       setLoading(false)
     }
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -110,17 +71,16 @@ export function SystemRegisterModal({ isOpen, onClose, onSuccess, corporations, 
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary/20 rounded-2xl"><Building2 className="w-6 h-6 text-primary" /></div>
             <div>
-              <DialogTitle className="text-2xl font-black">{editCorpData ? '法人情報の編集' : '新規システム登録'}</DialogTitle>
-              <DialogDescription className="text-white/40 font-bold">法人や拠点、メイン管理者の情報を管理します。</DialogDescription>
+              <DialogTitle className="text-2xl font-black">新規システム登録</DialogTitle>
+              <DialogDescription className="text-white/40 font-bold">法人や拠点情報の属性入力をここで行います。</DialogDescription>
             </div>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="p-8 pb-0">
           <TabsList className="mb-6 w-full bg-gray-50 p-1 rounded-2xl h-14">
-            <TabsTrigger value="corporation" className="flex-1 rounded-xl font-black data-[state=active]:bg-white data-[state=active]:shadow-md">法人{editCorpData ? '編集' : '登録'}</TabsTrigger>
-            {!editCorpData && <TabsTrigger value="facility" className="flex-1 rounded-xl font-black data-[state=active]:bg-white data-[state=active]:shadow-md">拠点登録</TabsTrigger>}
-            {!editCorpData && <TabsTrigger value="main_admin" className="flex-1 rounded-xl font-black data-[state=active]:bg-white data-[state=active]:shadow-md text-amber-600">管理者登録</TabsTrigger>}
+            <TabsTrigger value="corporation" className="flex-1 rounded-xl font-black data-[state=active]:bg-white data-[state=active]:shadow-md">法人登録</TabsTrigger>
+            <TabsTrigger value="facility" className="flex-1 rounded-xl font-black data-[state=active]:bg-white data-[state=active]:shadow-md">拠点登録</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -154,7 +114,7 @@ export function SystemRegisterModal({ isOpen, onClose, onSuccess, corporations, 
                     <Input type="email" placeholder="Email" className="h-12 rounded-xl" value={corpData.email} onChange={e => setCorpData({...corpData, email: e.target.value})} />
                   </div>
                 </motion.div>
-              ) : activeTab === 'facility' ? (
+              ) : (
                 <motion.div key="fac" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">所属法人 *</Label>
@@ -182,33 +142,7 @@ export function SystemRegisterModal({ isOpen, onClose, onSuccess, corporations, 
                     </div>
                   </div>
                 </motion.div>
-              ) : activeTab === 'main_admin' ? (
-                <motion.div key="admin" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">対象法人 *</Label>
-                    <select className="w-full h-12 rounded-xl border border-gray-100 px-4 font-bold" value={adminData.corporationId} onChange={e => setAdminData({...adminData, corporationId: e.target.value})} required>
-                      <option value="">選択してください</option>
-                      {corporations.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">スタッフID (7桁) *</Label>
-                    <Input placeholder="例: 1aa0001" className="h-12 rounded-xl" value={adminData.staffId} onChange={e => setAdminData({...adminData, staffId: e.target.value})} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">氏名 *</Label>
-                    <Input placeholder="管理者氏名" className="h-12 rounded-xl" value={adminData.fullName} onChange={e => setAdminData({...adminData, fullName: e.target.value})} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">メールアドレス *</Label>
-                    <Input type="email" placeholder="ログインに使用するEmail" className="h-12 rounded-xl" value={adminData.email} onChange={e => setAdminData({...adminData, email: e.target.value})} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">初期パスワード (任意)</Label>
-                    <Input placeholder="未入力の場合は CareGrow2026" className="h-12 rounded-xl" value={adminData.password} onChange={e => setAdminData({...adminData, password: e.target.value})} />
-                  </div>
-                </motion.div>
-              ) : null}
+              )}
             </AnimatePresence>
             <DialogFooter className="pt-6">
               <Button type="submit" className="w-full h-14 rounded-2xl bg-gray-900 text-white font-black hover:bg-gray-800" disabled={loading}>

@@ -8,13 +8,35 @@ import { NextResponse, type NextRequest } from 'next/server'
  * これにより /api/auth/me などの API ルートでセッションを正しく取得できるようになります。
  */
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
+
+  // 1. 静的ファイルや特定の公開パスは早期リターン（高速化）
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api/public') ||
+    pathname.includes('.') // 画像、フォント、ファビコンなど
+  ) {
+    return NextResponse.next()
+  }
+
   let res = NextResponse.next({
     request: {
       headers: req.headers,
     },
   })
 
-  // @ts-ignore (v0.15.0+ の SSR 互換形式)
+  // 2. クッキーの存在確認（無駄なネットワークリクエストを防止）
+  const hasSession = req.cookies.getAll().some(cookie => cookie.name.includes('supabase-auth-token'))
+  
+  // 開発者用バイパス
+  const isDev = req.cookies.get('axlink_dev_session')?.value === 'DEVELOPER'
+
+  if (!hasSession && !isDev) {
+    return res
+  }
+
+  // 3. セッションの同期
+  // @ts-ignore
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
