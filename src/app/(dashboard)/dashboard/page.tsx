@@ -1,4 +1,5 @@
 'use client'
+// Force re-trigger build for fixing missing profile display logic
 
 import { useEffect, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
