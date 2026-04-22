@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerAuthUser } from '@/lib/auth-server'
+import { withCompat } from '@/lib/api-utils'
 
 export async function GET() {
   try {
@@ -13,7 +14,7 @@ export async function GET() {
     }
 
     // クライアントに必要なプロファイル情報を整形して返す
-    return NextResponse.json({
+    return NextResponse.json(withCompat({
       id: user.id,
       staffId: user.staffId,
       email: user.email,
@@ -23,16 +24,16 @@ export async function GET() {
       facilityId: user.facilityId,
       divisionId: user.divisionId,
       unitId: user.unitId,
-      corporationName: user.corporation?.name,
-      facilityName: user.facility?.name,
-      divisionName: user.division?.name,
-      unitName: user.unit?.name,
+      corporationName: user.Corporation?.name,
+      facilityName: user.Facility?.name,
+      divisionName: user.Division?.name,
+      unitName: user.Unit?.name,
       department: user.department,
       gradeLevel: user.gradeLevel,
       experienceYears: user.experienceYears,
       yearsOfService: user.yearsOfService,
       welfarePoints: user.welfarePoints
-    })
+    }))
   } catch (error) {
     console.error('API /auth/me error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma'
 import { getServerAuthUser } from '@/lib/auth-server'
 import { randomUUID } from 'crypto'
 
+import { withCompat } from '@/lib/api-utils'
+
 // SYSTEM_ADMIN のみがアクセス可能
 async function checkAuth() {
   const { user } = await getServerAuthUser()
@@ -25,7 +27,7 @@ export async function GET() {
       },
       orderBy: { createdAt: 'desc' }
     })
-    return NextResponse.json(corporations)
+    return NextResponse.json(withCompat(corporations))
   } catch (error) {
     console.error('GET /api/admin/system/corporations error:', error)
     return NextResponse.json({ error: '法人情報の取得に失敗しました' }, { status: 500 })

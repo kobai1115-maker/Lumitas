@@ -24,6 +24,8 @@ type Props = {
   type: OrgItemType | null
   parentId: string | null
   parentName: string | null
+  editId?: string | null
+  initialName?: string
 }
 
 const TYPE_CONFIG = {
@@ -32,8 +34,8 @@ const TYPE_CONFIG = {
   UNIT: { label: 'ユニット・部署', icon: Users2, description: '事業所内の具体的なチームやフロアを追加します。' }
 }
 
-export function OrgItemRegisterModal({ isOpen, onClose, onSuccess, type, parentId, parentName }: Props) {
-  const [name, setName] = useState('')
+export function OrgItemRegisterModal({ isOpen, onClose, onSuccess, type, parentId, parentName, editId, initialName }: Props) {
+  const [name, setName] = useState(initialName || '')
   const [loading, setLoading] = useState(false)
 
   const config = type ? TYPE_CONFIG[type] : null

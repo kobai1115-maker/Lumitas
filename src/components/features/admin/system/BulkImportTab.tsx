@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Upload, Users, AlertCircle, CheckCircle2, ChevronRight, X, Loader2 } from 'lucide-react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@supabase/supabase-js'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -92,7 +92,10 @@ export function BulkImportTab({ corporations }: { corporations: Corporation[] })
 
     setIsImporting(true)
     try {
-      const supabase = createClientComponentClient()
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
       const { data: { session } } = await supabase.auth.getSession()
       
       const res = await fetch('/api/admin/users/bulk-import', {

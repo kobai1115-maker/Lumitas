@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerAuthUser } from '@/lib/auth-server'
 import { randomUUID } from 'crypto'
+import { withCompat } from '@/lib/api-utils'
 
 // 1. 組織ツリーの取得
 export async function GET(req: Request) {
@@ -26,19 +27,19 @@ export async function GET(req: Request) {
     const corporation = await prisma.corporation.findUnique({
       where: { id: targetCorpId },
       include: {
-        divisions: {
+        Division: {
           include: {
-            facilities: {
+            Facility: {
               include: {
-                units: true
+                Unit: true
               }
             }
           }
         },
-        facilities: {
+        Facility: {
           where: { divisionId: null }, // 部門に属さない事業所
           include: {
-            units: true
+            Unit: true
           }
         }
       }
@@ -48,7 +49,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: '法人が見つかりません' }, { status: 404 })
     }
 
-    return NextResponse.json(corporation)
+    return NextResponse.json(withCompat(corporation))
   } catch (error) {
     console.error('GET /api/admin/organization error:', error)
     return NextResponse.json({ error: '組織データの取得に失敗しました' }, { status: 500 })

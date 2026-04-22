@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getServerAuthUser } from '@/lib/auth-server';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,23 +10,11 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid Session' }, { status: 401 });
-    }
+    const { user, error } = await getServerAuthUser();
+    if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { data: senderCheck } = await supabaseAdmin
-      .from('users')
-      .select('staff_id')
-      .eq('id', user.id)
-      .single();
-
-    if (senderCheck?.staff_id !== '0xx0001') {
+    // システム管理者(DEVELOPER)のみがこのバルクインポート(全テナント対象)を実行可能
+    if (user.role !== 'DEVELOPER') {
       return NextResponse.json({ error: 'Access Denied. System Admin Only.' }, { status: 403 });
     }
 

@@ -8,10 +8,10 @@ async function main() {
   const user = await prisma.user.findUnique({
     where: { email },
     include: {
-      corporation: true,
-      facility: true,
-      division: true,
-      unit: true
+      Corporation: true,
+      Facility: true,
+      Division: true,
+      Unit: true
     }
   })
 
@@ -25,9 +25,9 @@ async function main() {
   console.log('FullName:', user.fullName || '(EMPTY)')
   console.log('Department:', user.department || '(EMPTY)')
   console.log('GradeLevel:', user.gradeLevel)
-  console.log('Corporation:', user.corporation?.name || '(NULL)')
-  console.log('Facility:', user.facility?.name || '(NULL)')
-  console.log('Unit:', user.unit?.name || '(NULL)')
+  console.log('Corporation:', user.Corporation?.name || '(NULL)')
+  console.log('Facility:', user.Facility?.name || '(NULL)')
+  console.log('Unit:', user.Unit?.name || '(NULL)')
   console.log('--- DIAGNOSIS END ---')
 }
 

@@ -310,9 +310,9 @@ export default function AdminOrganizationPage() {
                </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-               <StatRow label="全部門数" value={orgData?.divisions.length || 0} />
-               <StatRow label="全事業所数" value={(orgData?.divisions.reduce((acc, d) => acc + d.facilities.length, 0) || 0) + (orgData?.facilities.length || 0)} />
-               <StatRow label="ユニット総数" value="自動集計中..." />
+                <StatRow label="全部門数" value={orgData?.divisions?.length || 0} />
+                <StatRow label="全事業所数" value={(orgData?.divisions?.reduce((acc, d) => acc + (d.facilities?.length || 0), 0) || 0) + (orgData?.facilities?.length || 0)} />
+                <StatRow label="ユニット総数" value="自動集計中..." />
                <div className="pt-4 border-t border-white/10">
                   <p className="text-[10px] font-bold text-white/40 leading-relaxed uppercase tracking-wider">
                     部・事業所を追加することで、職員の評価範囲やインシデント報告の集計区分を柔軟に切り替えることが可能になります。
@@ -335,6 +335,8 @@ function TreeItem({
   isExpanded, 
   onToggle,
   onAdd,
+  onEdit,
+  onDelete,
   badge
 }: { 
   id: string, 

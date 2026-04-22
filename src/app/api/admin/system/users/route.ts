@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerAuthUser } from '@/lib/auth-server'
 import { createClient } from '@supabase/supabase-js'
+import { withCompat } from '@/lib/api-utils'
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
@@ -34,7 +35,7 @@ export async function GET(req: Request) {
       },
       orderBy: { createdAt: 'desc' }
     })
-    return NextResponse.json(users)
+    return NextResponse.json(withCompat(users))
   } catch (error) {
     console.error('GET /api/admin/system/users error:', error)
     return NextResponse.json({ error: 'ユーザー情報の取得に失敗しました' }, { status: 500 })
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
       }
     })
 
-    return NextResponse.json(newUser)
+    return NextResponse.json(withCompat(newUser))
   } catch (error) {
     console.error('POST /api/admin/system/users error:', error)
     return NextResponse.json({ error: 'ユーザー作成に失敗しました' }, { status: 500 })

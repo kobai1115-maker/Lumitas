@@ -40,8 +40,8 @@ export const getServerAuthUser = async () => {
 
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-    // [開発用バイパス] デベロッパー用クッキーがある場合はモックユーザーを返す
-    const devSession = cookieStore.get('axlink_dev_session')?.value
+    // [開発用バイパス] 開発環境のみ有効
+    const devSession = process.env.NODE_ENV === 'development' && cookieStore.get('axlink_dev_session')?.value
     if (devSession === 'DEVELOPER') {
       return { 
         user: { 
@@ -63,10 +63,10 @@ export const getServerAuthUser = async () => {
     const user = await (prisma.user as any).findUnique({
       where: { id: session.user.id },
       include: {
-        corporation: true,
-        facility: true,
-        division: true,
-        unit: true
+        Corporation: true,
+        Facility: true,
+        Division: true,
+        Unit: true
       }
     })
 
@@ -115,7 +115,7 @@ export function getAccessScope(user: any) {
  */
 export async function canAccessTargetUser(currentUser: any, targetUserId: string): Promise<boolean> {
   if (currentUser.id === targetUserId) return true;
-  if (currentUser.role === 'DEVELOPER' || currentUser.role === 'MAIN_ADMIN') return true;
+  if (currentUser.role === 'DEVELOPER') return true;
   
   const targetUser = await (prisma as any).user.findUnique({
     where: { id: targetUserId },
@@ -124,8 +124,11 @@ export async function canAccessTargetUser(currentUser: any, targetUserId: string
 
   if (!targetUser) return false;
 
-  // 法人が異なる場合はアクセス不可
+  // 法人が異なる場合は、デベロッパー以外アクセス不可
   if (targetUser.corporationId !== currentUser.corporationId) return false;
+
+  // 同じ法人内であれば、MAIN_ADMINは全アクセス可能
+  if (currentUser.role === 'MAIN_ADMIN') return true;
 
   if (currentUser.role === 'SUB_ADMIN') {
     // 施設長などは自施設の全データにアクセス可能

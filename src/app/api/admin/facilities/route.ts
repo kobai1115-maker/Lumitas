@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerAuthUser, getAccessScope } from '@/lib/auth-server'
-import { randomUUID } from 'crypto'
+import { withCompat } from '@/lib/api-utils'
 
 export async function GET() {
   try {
@@ -19,7 +19,7 @@ export async function GET() {
     const scope = getAccessScope(user)
     
     // システム管理者の場合は全施設、法人管理者の場合は自法人の施設
-    const facilities = await (prisma as any).facility.findMany({
+    const facilities = await prisma.facility.findMany({
       where: scope.corporationId ? { corporationId: scope.corporationId } : {},
       include: {
         Corporation: {
@@ -29,7 +29,7 @@ export async function GET() {
       orderBy: { name: 'asc' }
     })
 
-    return NextResponse.json(facilities)
+    return NextResponse.json(withCompat(facilities))
   } catch (error) {
     console.error('GET /api/admin/facilities error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

@@ -4,6 +4,8 @@ import { getServerAuthUser } from '@/lib/auth-server'
 
 import { createClient } from '@supabase/supabase-js'
 
+import { withCompat } from '@/lib/api-utils'
+
 // Supabase Admin クライアント取得関数（サーバーサイド専用）
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
@@ -33,15 +35,15 @@ export async function GET(req: Request) {
       where.facilityId = user.facilityId
     }
 
-    const staffList = await (prisma.user as any).findMany({
+    const staffList = await prisma.user.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        facility: { select: { name: true } },
-        division: { select: { name: true } }
+        Facility: { select: { name: true } },
+        Division: { select: { name: true } }
       }
     })
-    return NextResponse.json(staffList)
+    return NextResponse.json(withCompat(staffList))
   } catch (error) {
     console.error('GET /api/admin/staff error:', error)
     return NextResponse.json({ error: '取得に失敗しました' }, { status: 500 })

@@ -28,8 +28,8 @@ export async function middleware(req: NextRequest) {
   // 2. クッキーの存在確認（無駄なネットワークリクエストを防止）
   const hasSession = req.cookies.getAll().some(cookie => cookie.name.includes('supabase-auth-token'))
   
-  // 開発者用バイパス
-  const isDev = req.cookies.get('axlink_dev_session')?.value === 'DEVELOPER'
+  // 開発者用バイパス（ローカル開発環境のみ有効）
+  const isDev = process.env.NODE_ENV === 'development' && req.cookies.get('axlink_dev_session')?.value === 'DEVELOPER'
 
   if (!hasSession && !isDev) {
     return res

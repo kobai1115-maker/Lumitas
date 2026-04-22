@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma'
 import { getServerAuthUser } from '@/lib/auth-server'
 import { randomUUID } from 'crypto'
 
+import { withCompat } from '@/lib/api-utils'
+
 async function checkAuth() {
   const { user } = await getServerAuthUser()
   if (!user || user.role !== 'DEVELOPER') {
@@ -29,7 +31,7 @@ export async function GET(req: Request) {
       },
       orderBy: { createdAt: 'desc' }
     })
-    return NextResponse.json(facilities)
+    return NextResponse.json(withCompat(facilities))
   } catch (error) {
     console.error('GET /api/admin/system/facilities error:', error)
     return NextResponse.json({ error: '拠点情報の取得に失敗しました' }, { status: 500 })
@@ -64,7 +66,7 @@ export async function POST(req: Request) {
       }
     })
 
-    return NextResponse.json(facility)
+    return NextResponse.json(withCompat(facility))
   } catch (error) {
     console.error('POST /api/admin/system/facilities error:', error)
     return NextResponse.json({ error: '拠点情報の登録に失敗しました' }, { status: 500 })

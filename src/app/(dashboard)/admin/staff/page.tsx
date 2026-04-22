@@ -42,12 +42,10 @@ type Staff = {
 }
 
 const ROLE_CONFIG: Record<string, { label: string, color: string, icon: any, bg: string, text: string }> = {
+  'DEVELOPER': { label: '開発者', color: 'violet', icon: Shield, bg: 'bg-violet-50', text: 'text-violet-600' },
   'MAIN_ADMIN': { label: '法人管理者', color: 'rose', icon: Shield, bg: 'bg-rose-50', text: 'text-rose-600' },
   'SUB_ADMIN': { label: '施設長', color: 'indigo', icon: LayoutGrid, bg: 'bg-indigo-50', text: 'text-indigo-600' },
-  'GENERAL': { label: '介護職', color: 'teal', icon: Heart, bg: 'bg-teal-50', text: 'text-teal-600' },
-  'GENERAL': { label: '看護職', color: 'blue', icon: Stethoscope, bg: 'bg-blue-50', text: 'text-blue-600' },
-  'GENERAL': { label: '事務職', color: 'slate', icon: Briefcase, bg: 'bg-slate-50', text: 'text-slate-600' },
-  'GENERAL': { label: '生活相談員', color: 'orange', icon: Users, bg: 'bg-orange-50', text: 'text-orange-600' },
+  'GENERAL': { label: '一般職員', color: 'teal', icon: Heart, bg: 'bg-teal-50', text: 'text-teal-600' },
 }
 
 export default function AdminStaffPage() {

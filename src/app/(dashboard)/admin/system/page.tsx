@@ -43,21 +43,26 @@ type Corporation = {
   isActive: boolean
   createdAt: string
   _count: {
-    facilities: number
-    users: number
+    facilities?: number
+    users?: number
+    Facility?: number
+    User?: number
   }
 }
 
 type Facility = {
   id: string
   name: string
-  corporation: { name: string }
+  corporation?: { name: string }
+  Corporation?: { name: string }
   address?: string
   phoneNumber?: string
   email?: string
   _count: {
-    units: number
-    users: number
+    units?: number
+    users?: number
+    Unit?: number
+    User?: number
   }
 }
 
@@ -92,7 +97,10 @@ export default function SystemAdminPage() {
   }, [])
 
   const filteredCorps = corps.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-  const filteredFacs = facilities.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()) || f.corporation.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredFacs = facilities.filter(f => 
+    f.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (f.corporation?.name || f.Corporation?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   if (loading) {
     return (
@@ -197,11 +205,11 @@ export default function SystemAdminPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 rounded-3xl bg-gray-50/50 border border-gray-100 hover:bg-white hover:shadow-lg transition-all duration-300">
                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">管理拠点数</p>
-                         <p className="text-2xl font-black text-gray-900">{corp._count.facilities} <span className="text-xs font-bold text-gray-400 italic">locations</span></p>
+                         <p className="text-2xl font-black text-gray-900">{corp._count.facilities ?? corp._count.Facility ?? 0} <span className="text-xs font-bold text-gray-400 italic">locations</span></p>
                       </div>
                       <div className="p-4 rounded-3xl bg-gray-50/50 border border-gray-100 hover:bg-white hover:shadow-lg transition-all duration-300">
                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">総ユーザ数</p>
-                         <p className="text-2xl font-black text-gray-900">{corp._count.users} <span className="text-xs font-bold text-gray-400 italic">users</span></p>
+                         <p className="text-2xl font-black text-gray-900">{corp._count.users ?? corp._count.User ?? 0} <span className="text-xs font-bold text-gray-400 italic">users</span></p>
                       </div>
                     </div>
 
@@ -242,9 +250,9 @@ export default function SystemAdminPage() {
                         <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-primary group-hover:text-white transition-colors">
                           <MapPin className="w-5 h-5" />
                         </div>
-                        <Badge variant="secondary" className="rounded-lg font-black text-[9px] uppercase tracking-widest py-0 px-2 opacity-60">
-                           {fac.corporation.name}
-                        </Badge>
+                         <Badge variant="secondary" className="rounded-lg font-black text-[9px] uppercase tracking-widest py-0 px-2 opacity-60">
+                            {fac.corporation?.name || fac.Corporation?.name}
+                         </Badge>
                      </div>
                      <CardTitle className="text-xl font-black tracking-tight text-gray-900 truncate">
                         {fac.name}
@@ -254,7 +262,7 @@ export default function SystemAdminPage() {
                      <div className="space-y-2">
                         <DetailRow icon={MapPin} value={fac.address || '住所未登録'} small />
                         <DetailRow icon={Phone} value={fac.phoneNumber || '電話未登録'} small />
-                        <DetailRow icon={LayoutGrid} value={`ユニット数: ${fac._count.units}`} small />
+                         <DetailRow icon={LayoutGrid} value={`ユニット数: ${fac._count.units ?? fac._count.Unit ?? 0}`} small />
                      </div>
                      <Button variant="ghost" className="w-full justify-between h-12 rounded-xl font-bold text-gray-500 hover:text-primary hover:bg-primary/5 group/btn">
                         拠点詳細を表示

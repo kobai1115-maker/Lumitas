@@ -55,7 +55,7 @@ export default function DashboardPage() {
         <div className="space-y-1">
           <h2 className="text-rose-600 font-black text-lg">認証プロファイル・エラー</h2>
           <p className="text-gray-500 text-xs font-bold leading-relaxed max-w-xs">
-            {error || "ユーザーデータがデータベースに見つかりません。管理者に職員IDの登録状況を確認してください。"}
+            ユーザーデータがデータベースに見つかりません。管理者に職員IDの登録状況を確認してください。
           </p>
         </div>
         <div className="flex flex-col gap-3 mt-4 w-full max-w-xs">

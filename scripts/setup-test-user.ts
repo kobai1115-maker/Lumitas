@@ -27,7 +27,7 @@ async function main() {
   let corp = await prisma.corporation.findFirst()
   if (!corp) {
     corp = await prisma.corporation.create({
-      data: { name: 'サンプル法人', subdomain: 'sample' }
+      data: { id: 'corp-sample-123', name: 'サンプル法人', subdomain: 'sample', updatedAt: new Date() }
     })
     console.log('Created Corporation')
   }
@@ -35,7 +35,7 @@ async function main() {
   let facility = await prisma.facility.findFirst({ where: { corporationId: corp.id } })
   if (!facility) {
     facility = await prisma.facility.create({
-      data: { name: '東松戸ケアセンター', corporationId: corp.id }
+      data: { id: 'fac-sample-123', name: '東松戸ケアセンター', corporationId: corp.id, updatedAt: new Date() }
     })
     console.log('Created Facility')
   }
@@ -43,7 +43,7 @@ async function main() {
   let unit = await prisma.unit.findFirst({ where: { facilityId: facility.id } })
   if (!unit) {
     unit = await prisma.unit.create({
-      data: { name: '1階 ユニットA', facilityId: facility.id }
+      data: { id: 'unit-sample-123', name: '1階 ユニットA', facilityId: facility.id, updatedAt: new Date() }
     })
     console.log('Created Unit')
   }
@@ -85,23 +85,25 @@ async function main() {
       id: userId,
       staffId,
       fullName: '一般スタッフA',
-      role: Role.STAFF_CAREGIVER,
+      role: Role.GENERAL,
       corporationId: corp.id,
       facilityId: facility.id,
       unitId: unit.id,
-      isActive: true
+      isActive: true,
+      updatedAt: new Date()
     },
     create: {
       id: userId,
       staffId,
       email,
       fullName: '一般スタッフA',
-      role: Role.STAFF_CAREGIVER,
+      role: Role.GENERAL,
       corporationId: corp.id,
       facilityId: facility.id,
       unitId: unit.id,
       isActive: true,
-      department: '介護部'
+      department: '介護部',
+      updatedAt: new Date()
     }
   })
 

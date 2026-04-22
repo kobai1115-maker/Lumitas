@@ -28,19 +28,21 @@ export default function LoginPage() {
       const cleanStaffId = staffId.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, '')
       const cleanPassword = password.trim().toLowerCase()
 
-      // 1. 特別な「admin」「developer」アカウントのバイパス（開発時用）
-      if (cleanStaffId === 'admin' && password.trim() === '12345678') {
-        console.warn('Developer bypass: Logging in as admin')
-        router.push('/dashboard')
-        return
-      }
+      // 1. 特別な「admin」「developer」アカウントのバイパス（開発時のみ有効）
+      if (process.env.NODE_ENV === 'development') {
+        if (cleanStaffId === 'admin' && password.trim() === '12345678') {
+          console.warn('Developer bypass: Logging in as admin')
+          router.push('/dashboard')
+          return
+        }
 
-      if (cleanStaffId === 'developer' && cleanPassword === 'axlink2026') {
-        console.warn('System Admin bypass: Logging in as developer')
-        // クッキーをセットしてサーバーサイドでも DEVELOPER として認識させる
-        document.cookie = "axlink_dev_session=DEVELOPER; path=/; max-age=3600"
-        router.push('/admin/system')
-        return
+        if (cleanStaffId === 'developer' && cleanPassword === 'axlink2026') {
+          console.warn('System Admin bypass: Logging in as developer')
+          // クッキーをセットしてサーバーサイドでも DEVELOPER として認識させる
+          document.cookie = "axlink_dev_session=DEVELOPER; path=/; max-age=3600"
+          router.push('/admin/system')
+          return
+        }
       }
 
       // 職員IDを内部的なメールアドレス形式に変換（@が含まれていない場合のみ）
