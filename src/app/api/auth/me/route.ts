@@ -6,7 +6,10 @@ export async function GET() {
     const { user, error } = await getServerAuthUser()
 
     if (error || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ 
+        error: error || 'Unauthorized',
+        details: 'User profile not found in database. Please contact administrator.'
+      }, { status: 401 })
     }
 
     // クライアントに必要なプロファイル情報を整形して返す

@@ -37,10 +37,40 @@ export default function DashboardPage() {
     return YEARLY_DATA[fiscalYear] || YEARLY_DATA['2026']
   }, [fiscalYear])
 
-  if (loading || !profile) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-pulse text-gray-500 font-bold tracking-widest text-xs uppercase">データを読み込んでいます...</div>
+        <div className="animate-pulse text-gray-500 font-bold tracking-widest text-[10px] uppercase">データを同期中...</div>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 p-8 text-center">
+        <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-2">
+          <Shield className="w-8 h-8 text-rose-500" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-rose-600 font-black text-lg">認証プロファイル・エラー</h2>
+          <p className="text-gray-500 text-xs font-bold leading-relaxed max-w-xs">
+            {error || "ユーザーデータがデータベースに見つかりません。管理者に職員IDの登録状況を確認してください。"}
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 mt-4 w-full max-w-xs">
+          <button 
+            onClick={() => window.location.reload()}
+            className="w-full py-3 bg-gray-900 text-white rounded-xl text-xs font-black shadow-lg shadow-gray-200 active:scale-95 transition-transform"
+          >
+            再読み込みを試す
+          </button>
+          <button 
+            onClick={() => window.location.href = '/login'}
+            className="w-full py-3 bg-white border border-gray-100 text-gray-400 rounded-xl text-xs font-bold hover:bg-gray-50 transition-colors"
+          >
+            ログイン画面に戻る
+          </button>
+        </div>
       </div>
     )
   }

@@ -22,21 +22,30 @@ const useProfileStore = create<ProfileState>((set) => ({
   fetchProfile: async () => {
     set({ loading: true, error: null })
     try {
-      const res = await fetch('/api/auth/me')
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒でタイムアウト
+
+      const res = await fetch('/api/auth/me', { signal: controller.signal })
+      clearTimeout(timeoutId)
+
       if (res.ok) {
         const data = await res.json()
         set({ profile: data, error: null, initialized: true, loading: false })
       } else {
-        set({ profile: null, initialized: true, loading: false })
+        const errorData = await res.json().catch(() => ({}))
+        set({ profile: null, initialized: true, loading: false, error: errorData.error || `Profile fetch error: ${res.status}` })
         if (res.status === 401) {
           console.warn('User not authenticated (401)')
-        } else {
-          set({ error: `Profile fetch error: ${res.status}` })
         }
       }
-    } catch (err) {
-      console.error('useProfile network error:', err)
-      set({ error: 'Network error', initialized: true, loading: false })
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.error('useProfile timeout error')
+        set({ error: 'サーバーからの応答がありません（タイムアウト）', initialized: true, loading: false })
+      } else {
+        console.error('useProfile network error:', err)
+        set({ error: 'ネットワークエラーが発生しました', initialized: true, loading: false })
+      }
     }
   },
   clearProfile: () => set({ profile: null, loading: false, error: null, initialized: true })
