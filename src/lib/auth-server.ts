@@ -49,7 +49,12 @@ export const getServerAuthUser = async () => {
           staffId: 'developer', 
           fullName: '開発者特権アカウント', 
           role: 'DEVELOPER',
-          corporationId: null 
+          corporationId: null,
+          facilityId: null,
+          divisionId: null,
+          unitId: null,
+          positionId: null,
+          department: 'システム開発部'
         }, 
         error: null 
       }
@@ -60,13 +65,14 @@ export const getServerAuthUser = async () => {
     }
 
     // Prisma から拡張プロファイルを取得
-    const user = await (prisma.user as any).findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
         Corporation: true,
         Facility: true,
         Division: true,
-        Unit: true
+        Unit: true,
+        Position: true
       }
     })
 

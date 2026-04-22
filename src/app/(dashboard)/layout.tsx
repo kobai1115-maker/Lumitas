@@ -100,6 +100,13 @@ export default function DashboardLayout({
     { name: '施設・拠点設定', href: '/admin/settings', icon: Settings, roles: ['DEVELOPER', 'MAIN_ADMIN'] },
   ]
 
+  const ROLE_NAMES: Record<string, string> = {
+    'DEVELOPER': 'システム開発者',
+    'MAIN_ADMIN': '法人管理者',
+    'SUB_ADMIN': '施設管理者',
+    'GENERAL': '一般職員',
+  }
+
   const filteredSubNav = subNavItems.filter(item => {
     if (!('roles' in item)) return true // roles 定義がないものは全員
     const roles = (item as any).roles as string[]
@@ -184,6 +191,29 @@ export default function DashboardLayout({
           </div>
 
           <div className="p-4 border-t border-gray-100 bg-gray-50/30">
+            {profile && (
+              <div className="px-3 py-4 mb-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
+                    {profile.fullName.charAt(0)}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[11px] font-black text-gray-900 truncate leading-none mb-1">{profile.fullName}</span>
+                    <span className="text-[9px] font-bold text-gray-400 truncate">{profile.positionName || ROLE_NAMES[profile.role as string] || profile.role}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1 pt-2 border-t border-gray-50">
+                   <div className="flex items-center gap-1.5">
+                     <Building2 className="w-2.5 h-2.5 text-gray-300" />
+                     <span className="text-[8px] font-bold text-gray-400 truncate">{profile.facilityName || profile.corporationName || '所属未設定'}</span>
+                   </div>
+                   <div className="flex items-center gap-1.5">
+                     <Sparkles className="w-2.5 h-2.5 text-indigo-300" />
+                     <span className="text-[8px] font-bold text-indigo-400 truncate">{profile.staffId}</span>
+                   </div>
+                </div>
+              </div>
+            )}
             <button
               onClick={handleLogout}
               className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
@@ -200,9 +230,17 @@ export default function DashboardLayout({
           <Link href="/dashboard" className="flex items-center gap-2 text-primary font-bold text-lg tracking-tight">
             <Sparkles className="w-5 h-5" /> ルミタス (Lumitas)
           </Link>
-          <button onClick={handleLogout} className="p-2 text-gray-400">
-            <LogOut className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-4">
+            {profile && (
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-black text-gray-900 leading-none">{profile.fullName}</span>
+                <span className="text-[8px] font-bold text-gray-400 leading-none mt-1">{profile.positionName || ROLE_NAMES[profile.role as string] || profile.role}</span>
+              </div>
+            )}
+            <button onClick={handleLogout} className="p-2 text-gray-400">
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </header>
 
         {/* 画面遷移アニメーションを簡略化 */}

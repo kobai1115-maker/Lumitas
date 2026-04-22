@@ -40,7 +40,8 @@ export async function GET(req: Request) {
       orderBy: { createdAt: 'desc' },
       include: {
         Facility: { select: { name: true } },
-        Division: { select: { name: true } }
+        Division: { select: { name: true } },
+        Position: { select: { name: true } }
       }
     })
     return NextResponse.json(withCompat(staffList))

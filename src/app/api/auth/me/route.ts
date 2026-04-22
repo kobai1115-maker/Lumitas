@@ -28,6 +28,7 @@ export async function GET() {
       facilityName: user.Facility?.name,
       divisionName: user.Division?.name,
       unitName: user.Unit?.name,
+      positionName: user.Position?.name,
       department: user.department,
       gradeLevel: user.gradeLevel,
       experienceYears: user.experienceYears,
