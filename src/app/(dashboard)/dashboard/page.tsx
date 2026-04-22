@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UserProfile, DashboardMetrics, ScoringResult } from '@/types'
-import { CalendarDays, ChevronDown, History } from 'lucide-react'
+import { CalendarDays, ChevronDown, History, Shield } from 'lucide-react'
 
 import ProgressOverview from '@/components/features/dashboard/ProgressOverview'
 import RoleBasedWidgets from '@/components/features/dashboard/RoleBasedWidgets'
