@@ -178,14 +178,14 @@ const GoalCard = React.memo(({
 GoalCard.displayName = 'GoalCard'
 
 
-// -------------------------------------------------------------
-// Component: GoalsPage
-// -------------------------------------------------------------
+import GoalSwipeDeck from '@/components/features/goals/GoalSwipeDeck'
+
 export default function GoalsPage() {
   const { profile } = useProfile()
   const [goals, setGoals] = useState<Goal[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'list' | 'swipe'>('list')
 
   // 目標追加フォーム用ステート
   const [showAddForm, setShowAddForm] = useState(false)
@@ -296,6 +296,16 @@ export default function GoalsPage() {
     }
   }, [])
 
+  const handleSwipeRight = (goal: Goal) => {
+    handleToggleAchieve({ ...goal, isAchieved: false }) 
+  }
+
+  const handleSwipeLeft = (goal: Goal) => {
+    console.log('Skipped goal:', goal.id)
+  }
+
+  const activeGoalsForSwipe = goals.filter(g => !g.isAchieved)
+
   // カテゴリ分け
   const dailyGoals = goals.filter(g => g.type === 'DAILY')
   const yearlyGoals = goals.filter(g => g.type === 'YEARLY')
@@ -305,12 +315,8 @@ export default function GoalsPage() {
   // ユーザーの階層を判定
   const getCareerLevel = (): CareerLevel => {
     if (!profile) return 'NEWCOMER'
-    
-    // 等級5以上、または経験10年以上をエキスパート
     if ((profile?.gradeLevel || 0) >= 5 || (profile?.experienceYears || 0) >= 10) return 'EXPERT'
-    // 等級3以上、または経験3年以上を中核
     if ((profile?.gradeLevel || 0) >= 3 || (profile?.experienceYears || 0) >= 3) return 'MID'
-    
     return 'NEWCOMER'
   }
 
@@ -351,136 +357,190 @@ export default function GoalsPage() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center gap-3"
         >
+          <div className="bg-white border border-gray-100 p-1 rounded-2xl flex shadow-sm">
+            <button 
+              onClick={() => setViewMode('list')}
+              className={cn(
+                "px-4 py-2 rounded-xl text-xs font-black transition-all",
+                viewMode === 'list' ? "bg-gray-900 text-white shadow-md" : "text-gray-400 hover:text-gray-600"
+              )}
+            >
+              リスト
+            </button>
+            <button 
+              onClick={() => setViewMode('swipe')}
+              className={cn(
+                "px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2",
+                viewMode === 'swipe' ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-gray-600"
+              )}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              スワイプ
+            </button>
+          </div>
+
           <Button 
             onClick={openAddModal}
             className="rounded-full shadow-xl shadow-primary/20 h-12 px-6 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-500 text-sm font-black border border-white/20"
           >
-            <Plus className="w-4 h-4 mr-1" /> 目標を新規作成
+            <Plus className="w-4 h-4 mr-1" /> 追加
           </Button>
         </motion.div>
       </div>
 
       <div className="max-w-5xl mx-auto space-y-12">
-        {/* レイヤー1：常に上にあるDailyとYearly */}
-        <section>
-          <div className="flex items-center gap-2 mb-4 pl-2">
-            <Target className="w-5 h-5 text-gray-400" />
-            <h2 className="text-sm font-black text-gray-500 tracking-wider uppercase">重点目標 (日常と1年)</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Daily */}
-            {dailyGoals.length > 0 ? (
-                dailyGoals.map(goal => (
-                    <GoalCard 
-                        key={goal.id} 
-                        goal={goal} 
-                        bgClass="bg-gradient-to-br from-blue-50 to-indigo-50/30 border-blue-100/50" 
-                        iconClass="bg-blue-500 text-white" 
-                        labelClass="text-blue-600 bg-blue-100/50 border-blue-200/50"
-                        onEdit={openEditModal}
-                        onToggle={handleToggleAchieve}
-                    />
-                ))
-            ) : (
-                <div onClick={() => { setNewGoal(prev => ({...prev, type: 'DAILY'})); setShowAddForm(true); }} className="h-full min-h-[220px] rounded-3xl border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 transition-colors flex flex-col items-center justify-center text-gray-400 cursor-pointer">
-                    <Plus className="w-8 h-8 mb-2 text-gray-300" />
-                    <span className="text-xs font-bold">毎日の目標を設定する</span>
-                </div>
-            )}
-            
-            {/* Yearly */}
-            {yearlyGoals.length > 0 ? (
-                yearlyGoals.map(goal => (
-                    <GoalCard 
-                        key={goal.id} 
-                        goal={goal} 
-                        bgClass="bg-gradient-to-br from-violet-50 to-fuchsia-50/30 border-violet-100/50" 
-                        iconClass="bg-violet-500 text-white" 
-                        labelClass="text-violet-600 bg-violet-100/50 border-violet-200/50"
-                        onEdit={openEditModal}
-                        onToggle={handleToggleAchieve}
-                    />
-                ))
-            ) : (
-                <div onClick={() => { setNewGoal(prev => ({...prev, type: 'YEARLY'})); setShowAddForm(true); }} className="h-full min-h-[220px] rounded-3xl border-2 border-dashed border-gray-200 hover:border-violet-300 hover:bg-violet-50/30 transition-colors flex flex-col items-center justify-center text-gray-400 cursor-pointer">
-                    <Plus className="w-8 h-8 mb-2 text-gray-300" />
-                    <span className="text-xs font-bold">1年の目標を設定する</span>
-                </div>
-            )}
-          </div>
-        </section>
-
-        {/* レイヤー2：期間目標 */}
-        <section>
-          <div className="flex items-center gap-2 mb-4 pl-2">
-            <Calendar className="w-5 h-5 text-gray-400" />
-            <h2 className="text-sm font-black text-gray-500 tracking-wider uppercase">現在の期間目標</h2>
-          </div>
-          
-          {activeEventGoals.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <AnimatePresence>
-                {activeEventGoals.map(goal => (
-                    <GoalCard key={goal.id} goal={goal} onEdit={openEditModal} onToggle={handleToggleAchieve} />
-                ))}
-                </AnimatePresence>
-            </div>
+        <AnimatePresence mode="wait">
+          {viewMode === 'swipe' ? (
+            <motion.div
+              key="swipe-view"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="py-10"
+            >
+              <div className="text-center mb-10">
+                <h2 className="text-xl font-black text-gray-800 mb-2">今日の目標チェック</h2>
+                <p className="text-xs text-gray-500 font-bold">右スワイプで「達成！」、左スワイプで「継続」</p>
+              </div>
+              <GoalSwipeDeck 
+                goals={activeGoalsForSwipe}
+                onSwipeRight={handleSwipeRight}
+                onSwipeLeft={handleSwipeLeft}
+                onComplete={() => setViewMode('list')}
+              />
+            </motion.div>
           ) : (
-             <div className="bg-white rounded-3xl border border-gray-100 p-8 text-center shadow-sm">
-                <p className="text-sm font-bold text-gray-400">現在進行中の期間目標はありません。</p>
-             </div>
-          )}
-        </section>
+            <motion.div
+              key="list-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-12"
+            >
+              {/* レイヤー1：常に上にあるDailyとYearly */}
+              <section>
+                <div className="flex items-center gap-2 mb-4 pl-2">
+                  <Target className="w-5 h-5 text-gray-400" />
+                  <h2 className="text-sm font-black text-gray-500 tracking-wider uppercase">重点目標 (日常と1年)</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Daily */}
+                  {dailyGoals.length > 0 ? (
+                      dailyGoals.map(goal => (
+                          <GoalCard 
+                              key={goal.id} 
+                              goal={goal} 
+                              bgClass="bg-gradient-to-br from-blue-50 to-indigo-50/30 border-blue-100/50" 
+                              iconClass="bg-blue-500 text-white" 
+                              labelClass="text-blue-600 bg-blue-100/50 border-blue-200/50"
+                              onEdit={openEditModal}
+                              onToggle={handleToggleAchieve}
+                          />
+                      ))
+                  ) : (
+                      <div onClick={() => { setNewGoal(prev => ({...prev, type: 'DAILY'})); setShowAddForm(true); }} className="h-full min-h-[220px] rounded-3xl border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 transition-colors flex flex-col items-center justify-center text-gray-400 cursor-pointer">
+                          <Plus className="w-8 h-8 mb-2 text-gray-300" />
+                          <span className="text-xs font-bold">毎日の目標を設定する</span>
+                      </div>
+                  )}
+                  
+                  {/* Yearly */}
+                  {yearlyGoals.length > 0 ? (
+                      yearlyGoals.map(goal => (
+                          <GoalCard 
+                              key={goal.id} 
+                              goal={goal} 
+                              bgClass="bg-gradient-to-br from-violet-50 to-fuchsia-50/30 border-violet-100/50" 
+                              iconClass="bg-violet-500 text-white" 
+                              labelClass="text-violet-600 bg-violet-100/50 border-violet-200/50"
+                              onEdit={openEditModal}
+                              onToggle={handleToggleAchieve}
+                          />
+                      ))
+                  ) : (
+                      <div onClick={() => { setNewGoal(prev => ({...prev, type: 'YEARLY'})); setShowAddForm(true); }} className="h-full min-h-[220px] rounded-3xl border-2 border-dashed border-gray-200 hover:border-violet-300 hover:bg-violet-50/30 transition-colors flex flex-col items-center justify-center text-gray-400 cursor-pointer">
+                          <Plus className="w-8 h-8 mb-2 text-gray-300" />
+                          <span className="text-xs font-bold">1年の目標を設定する</span>
+                      </div>
+                  )}
+                </div>
+              </section>
 
-        {/* レイヤー3：達成実績 (増えていく場所) */}
-        {achievedGoals.length > 0 && (
-            <section className="pb-20">
-                <div className="flex items-center gap-2 mb-6 pl-2">
-                    <Award className="w-5 h-5 text-yellow-500" />
-                    <h2 className="text-sm font-black text-gray-600 tracking-wider uppercase">栄誉の殿堂 (達成実績)</h2>
-                    <span className="ml-2 bg-yellow-100 text-yellow-700 text-[10px] font-black px-2 py-0.5 rounded-full">{achievedGoals.length} 個クリア</span>
+              {/* レイヤー2：期間目標 */}
+              <section>
+                <div className="flex items-center gap-2 mb-4 pl-2">
+                  <Calendar className="w-5 h-5 text-gray-400" />
+                  <h2 className="text-sm font-black text-gray-500 tracking-wider uppercase">現在の期間目標</h2>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <AnimatePresence>
-                    {achievedGoals.map(goal => (
-                        <motion.div 
-                            key={goal.id}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            whileHover={{ y: -2 }}
-                            className="bg-gradient-to-br from-[#FFFdf0] to-white border border-amber-200/40 rounded-2xl p-4 shadow-md relative overflow-hidden"
-                        >
-                            <div className="absolute -right-4 -bottom-4 opacity-10">
-                                <Award className="w-16 h-16 text-yellow-500" />
-                            </div>
-                            <div className="flex justify-between items-start mb-2 relative z-10">
-                                <div className="bg-yellow-100 text-yellow-600 p-1.5 rounded-lg">
-                                    <CheckCircle2 className="w-4 h-4" />
-                                </div>
-                                <span className="text-[9px] font-black bg-white border border-gray-100 px-2 py-0.5 rounded-full text-gray-400">
-                                    {goal.deadline ? new Date(goal.deadline).toLocaleDateString() : '期限なし'}
-                                </span>
-                            </div>
-                            <h4 className="text-sm font-bold text-gray-800 line-clamp-2 relative z-10">{goal.title}</h4>
-                            <div className="mt-3 flex items-center justify-between z-10 relative">
-                                <span className="text-[10px] font-bold text-gray-400">
-                                    {goal.currentValue} / {goal.targetValue} {goal.unit}
-                                </span>
-                                <button 
-                                    onClick={() => handleToggleAchieve(goal)}
-                                    className="text-[10px] font-bold text-gray-400 hover:text-gray-600 underline"
-                                >
-                                    戻す
-                                </button>
-                            </div>
-                        </motion.div>
-                    ))}
-                    </AnimatePresence>
-                </div>
-            </section>
-        )}
+                {activeEventGoals.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <AnimatePresence>
+                      {activeEventGoals.map(goal => (
+                          <GoalCard key={goal.id} goal={goal} onEdit={openEditModal} onToggle={handleToggleAchieve} />
+                      ))}
+                      </AnimatePresence>
+                  </div>
+                ) : (
+                   <div className="bg-white rounded-3xl border border-gray-100 p-8 text-center shadow-sm">
+                      <p className="text-sm font-bold text-gray-400">現在進行中の期間目標はありません。</p>
+                   </div>
+                )}
+              </section>
+
+              {/* レイヤー3：達成実績 (増えていく場所) */}
+              {achievedGoals.length > 0 && (
+                  <section className="pb-20">
+                      <div className="flex items-center gap-2 mb-6 pl-2">
+                          <Award className="w-5 h-5 text-yellow-500" />
+                          <h2 className="text-sm font-black text-gray-600 tracking-wider uppercase">栄誉の殿堂 (達成実績)</h2>
+                          <span className="ml-2 bg-yellow-100 text-yellow-700 text-[10px] font-black px-2 py-0.5 rounded-full">{achievedGoals.length} 個クリア</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                          <AnimatePresence>
+                          {achievedGoals.map(goal => (
+                              <motion.div 
+                                  key={goal.id}
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  whileHover={{ y: -2 }}
+                                  className="bg-gradient-to-br from-[#FFFdf0] to-white border border-amber-200/40 rounded-2xl p-4 shadow-md relative overflow-hidden"
+                              >
+                                  <div className="absolute -right-4 -bottom-4 opacity-10">
+                                      <Award className="w-16 h-16 text-yellow-500" />
+                                  </div>
+                                  <div className="flex justify-between items-start mb-2 relative z-10">
+                                      <div className="bg-yellow-100 text-yellow-600 p-1.5 rounded-lg">
+                                          <CheckCircle2 className="w-4 h-4" />
+                                      </div>
+                                      <span className="text-[9px] font-black bg-white border border-gray-100 px-2 py-0.5 rounded-full text-gray-400">
+                                          {goal.deadline ? new Date(goal.deadline).toLocaleDateString() : '期限なし'}
+                                      </span>
+                                  </div>
+                                  <h4 className="text-sm font-bold text-gray-800 line-clamp-2 relative z-10">{goal.title}</h4>
+                                  <div className="mt-3 flex items-center justify-between z-10 relative">
+                                      <span className="text-[10px] font-bold text-gray-400">
+                                          {goal.currentValue} / {goal.targetValue} {goal.unit}
+                                      </span>
+                                      <button 
+                                          onClick={() => handleToggleAchieve(goal)}
+                                          className="text-[10px] font-bold text-gray-400 hover:text-gray-600 underline"
+                                      >
+                                          戻す
+                                      </button>
+                                  </div>
+                              </motion.div>
+                          ))}
+                          </AnimatePresence>
+                      </div>
+                  </section>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* モーダルフォーム */}

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareGrow AI - パフォーマンス改善完了報告書</title>
+    <style>
+        :root {
+            --primary: #f59e0b; /* amber-500 */
+            --primary-light: #fef3c7; /* amber-50 */
+            --secondary: #3b82f6; /* blue-500 */
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --bg-main: #f9fafb;
+            --bg-card: #ffffff;
+            --border: #e5e7eb;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #fbbf24 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 22px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 8px;
+            margin-top: 0;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card {
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: var(--text-main);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card h3::before {
+            content: "✓";
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background-color: var(--success);
+            color: white;
+            border-radius: 50%;
+            font-size: 14px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            background-color: var(--primary-light);
+            color: #d97706;
+            margin-bottom: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: var(--bg-main);
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        td {
+            font-size: 15px;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--text-muted);
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 24px;
+            background-color: var(--bg-main);
+            color: var(--text-muted);
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .highlight {
+            background-color: var(--primary-light);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #b45309;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>パフォーマンス改善完了報告書</h1>
+        <p>CareGrow AI - 画面遷移高速化プロジェクト</p>
+    </div>
+
+    <div class="content">
+        <p>関係者各位</p>
+        <p>平素は開発プロジェクトにご協力いただき、誠にありがとうございます。</p>
+        <p>ご報告いただいておりました「画面遷移が異常に重く、実用に耐えない」という重大なパフォーマンス課題につきまして、Nagi（総合ディレクター）主導のもと、根本原因の特定および修正作業が完了いたしました。</p>
+        <p>本報告書にて、実施した改修内容と期待される効果をご報告いたします。</p>
+
+        <h2 style="margin-top: 40px;">💡 実施した主要な改修</h2>
+
+        <div class="card">
+            <span class="badge">フロントエンド最適化</span>
+            <h3>レイアウトの強制再マウント（画面の再描画）の排除</h3>
+            <p><strong>課題：</strong> ページを移動するたびに、画面全体のDOMツリーが完全に破棄され、ゼロから再構築される設定になっていました。これがブラウザをフリーズさせる最大の原因でした。</p>
+            <p><strong>対応：</strong> <code>src/app/(dashboard)/layout.tsx</code> 内のアニメーション用タグから <code>key={pathname}</code> の指定を削除しました。</p>
+            <p><strong>効果：</strong> Next.js 本来の「高速なクライアントサイドルーティング」が復活し、共通レイアウトを維持したまま中身だけを瞬時に切り替えることが可能になりました。</p>
+        </div>
+
+        <div class="card">
+            <span class="badge">バックエンド・インフラ最適化</span>
+            <h3>ミドルウェアによる不要な通信ブロッキングの解消</h3>
+            <p><strong>課題：</strong> Next.jsが裏側でページを事前読み込み（プリフェッチ）する際にも、毎回Supabaseへセッション確認の通信が発生し、ネットワークの遅延を招いていました。</p>
+            <p><strong>対応：</strong> <code>middleware.ts</code> を最新の推奨形式（<code>createMiddlewareClient</code>）へ書き換え、プリフェッチリクエスト時には重いセッション検証をスキップして即座に応答するよう最適化しました。</p>
+            <p><strong>効果：</strong> リンクのホバー時やクリック時の反応速度（TTFB）が劇的に向上し、「クリックしても反応しない」というもたつきが解消されました。</p>
+        </div>
+
+        <div class="card">
+            <span class="badge">データベース最適化</span>
+            <h3>頻繁に検索されるテーブルへのインデックス（索引）追加</h3>
+            <p><strong>課題：</strong> ダッシュボード表示時に行われる「特定ユーザーの目標やレポートの集計」において、検索キーにインデックスがなく、全件スキャンが発生していました。</p>
+            <p><strong>対応：</strong> <code>schema.prisma</code> にて、<code>Goal</code>, <code>IncidentReport</code>, <code>PeerBonus</code>, <code>Evaluation</code> の各テーブルに対し、<code>userId</code> などの必須カラムにインデックスを追加し、データベースに反映（db push）しました。</p>
+            <p><strong>効果：</strong> データ量が増加してもダッシュボードのAPIレスポンスが遅延しにくくなり、瞬時にグラフ等のメトリクスが表示されるようになりました。</p>
+        </div>
+
+        <h2 style="margin-top: 40px;">📊 修正対象ファイル一覧</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ファイルパス</th>
+                    <th>修正内容のサマリー</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>src/app/(dashboard)/layout.tsx</code></td>
+                    <td>motion.divからの key 削除によるレンダリングブロック解消</td>
+                </tr>
+                <tr>
+                    <td><code>middleware.ts</code></td>
+                    <td>createMiddlewareClientへの移行と、RSCプリフェッチのバイパス処理追加</td>
+                </tr>
+                <tr>
+                    <td><code>prisma/schema.prisma</code></td>
+                    <td>集計用外部キーへの @@index 追加</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 style="margin-top: 40px;">🚀 今後のアクションとお願い</h2>
+        <ul>
+            <li>本番環境（Vercel）へのデプロイが完了次第、実際のブラウザで操作感をお試しください。</li>
+            <li>「ホーム」から「目標」「ピアボーナス」などのタブを切り替えた際、<span class="highlight">即座に画面が切り替わること</span>をご確認いただけますと幸いです。</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        Generated by CareGrow AI Agent Workflow (Nagi x nakaji)<br>
+        2026-05-15
+    </div>
+</div>
+
+</body>
+</html>

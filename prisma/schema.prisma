@@ -552,6 +552,7 @@ model Evaluation {
   @@index([corporationId])
   @@index([employeeId])
   @@index([facilityId])
+  @@index([periodKey])
   @@schema("public")
 }
 
@@ -607,6 +608,8 @@ model Goal {
 
   @@index([corporationId])
   @@index([facilityId])
+  @@index([userId])
+  @@index([periodKey])
   @@schema("public")
 }
 
@@ -637,6 +640,8 @@ model IncidentReport {
   description       String
   preventionIdea    String?
   aiEvaluatedPoints Int          @default(0)
+  isAiGenerated     Boolean      @default(false)
+  rawVoiceText      String?
   createdAt         DateTime     @default(now())
   corporationId     String
   facilityId        String?
@@ -648,6 +653,8 @@ model IncidentReport {
   @@index([corporationId])
   @@index([facilityId])
   @@index([unitId])
+  @@index([reporterId])
+  @@index([createdAt])
   @@schema("public")
 }
 
@@ -714,6 +721,8 @@ model PeerBonus {
 
   @@index([corporationId])
   @@index([facilityId])
+  @@index([receiverId])
+  @@index([createdAt])
   @@schema("public")
 }
 

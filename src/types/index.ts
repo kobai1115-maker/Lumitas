@@ -85,3 +85,14 @@ export type GeminiIncidentScoreResult = {
   riskCategory?: string // 例: 転倒・転落, 誤薬, 不穏, 異食など
   analysis?: string // AIによる詳細なリスク分析
 }
+
+export type GeminiVoiceIncidentResult = {
+  summary: string
+  description: string
+  preventionIdea?: string
+  riskCategory: string
+  riskLevel: 'HIGH' | 'MEDIUM' | 'LOW'
+  location?: string
+  involvedUser?: string
+  praise?: string
+}

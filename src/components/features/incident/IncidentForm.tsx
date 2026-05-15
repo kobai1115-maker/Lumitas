@@ -138,7 +138,7 @@ export default function IncidentForm({ onSuccess }: IncidentFormProps) {
                   <div className="w-1.5 h-6 bg-green-500 rounded-full" />
                   再発防止策・気づき（評価アップ！）
                 </Label>
-                <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200 bg-gray-50 uppercase tracking-tighter">Optional</Badge>
+                <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200 bg-gray-50 uppercase tracking-tighter">任意</Badge>
               </div>
               <Textarea
                 placeholder="どうすれば防げたか、あるいはどのように気づいたか..."
@@ -180,7 +180,7 @@ export default function IncidentForm({ onSuccess }: IncidentFormProps) {
                   <div>
                     <h2 className="text-2xl font-black tracking-tight">{aiResult.points >= 4 ? '✨ グッドキャッチ！' : '報告を受理しました'}</h2>
                     <p className={`text-[10px] font-bold mt-1 uppercase tracking-[0.2em] ${aiResult.points >= 4 ? 'text-primary' : 'text-gray-400'}`}>
-                      AI Analysis & Bonus Points Applied
+                      AI分析完了・ボーナスポイント付与
                     </p>
                   </div>
                 </div>
@@ -188,7 +188,7 @@ export default function IncidentForm({ onSuccess }: IncidentFormProps) {
                 <div className="flex items-center justify-center gap-2">
                   {[...Array(5)].map((_, i) => (
                     <motion.div
-                      key={i}
+                      key={`ai-star-${i}`}
                       initial={{ opacity: 0, scale: 0.5 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.1 * i }}
@@ -216,7 +216,7 @@ export default function IncidentForm({ onSuccess }: IncidentFormProps) {
                   {aiResult.analysis && (
                     <div className={`text-xs leading-relaxed text-left p-6 rounded-2xl border ${aiResult.points >= 4 ? 'bg-black/40 border-white/5 text-gray-300' : 'bg-gray-50/50 border-gray-100 text-gray-600'}`}>
                       <p className="font-bold mb-3 opacity-50 uppercase tracking-widest text-[10px] flex items-center gap-2">
-                        <ShieldAlert className="w-3.5 h-3.5" /> AI Risk Analysis Report
+                        <ShieldAlert className="w-3.5 h-3.5" /> AIリスク分析報告
                       </p>
                       {aiResult.analysis}
                     </div>

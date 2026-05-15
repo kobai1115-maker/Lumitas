@@ -136,9 +136,9 @@ export default function TrainingPage() {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger
             render={
-              <Button className="gap-2 shadow-sm rounded-full px-5 hover:scale-105 transition-transform">
+              <button className="inline-flex items-center justify-center gap-2 shadow-sm rounded-full px-5 h-10 bg-primary text-white font-bold hover:scale-105 transition-transform">
                 <PlusCircle className="w-4 h-4" /> 記録を追加
-              </Button>
+              </button>
             }
           />
           <DialogContent className="sm:max-w-md bg-white rounded-2xl border-none shadow-2xl">

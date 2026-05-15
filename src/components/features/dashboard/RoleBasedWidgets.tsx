@@ -7,42 +7,49 @@ import Link from 'next/link'
 type Props = {
   role: Role
   metrics: DashboardMetrics
+  isLoading?: boolean
 }
 
-export default function RoleBasedWidgets({ role, metrics }: Props) {
+export default function RoleBasedWidgets({ role, metrics, isLoading }: Props) {
   // 職務ごとのウィジェット定義
   const renderWidgets = () => {
+    if (isLoading) {
+      return Array(3).fill(0).map((_, i) => (
+        <Card key={`skeleton-${i}`} className="h-[120px] animate-pulse bg-gray-50 border-gray-100" />
+      ))
+    }
+
     switch (role) {
-      case 'GENERAL':
+      case 'STAFF_CAREGIVER':
         return (
           <>
-            <WidgetCard title="読書・Off-JT達成状況" value={`${metrics.completionRate}%`} desc="目標: 100%" icon={ClipboardCheck} color="bg-indigo-50 text-indigo-600" href="/training" />
-            <WidgetCard title="グッドキャッチ報告数" value={`${metrics.incidentReports}件`} desc="今月の報告（目標:3件）" icon={FileText} color="bg-yellow-50 text-yellow-600" href="/incident" />
-            <WidgetCard title="身体介助スキル習熟度" value={`レベル ${metrics.skillLevel}`} desc="リーダー評価(1-5)" icon={Activity} color="bg-blue-50 text-blue-600" href="/evaluation" />
+            <WidgetCard key="caregiver-completion" title="ケア記録完了率" value={`${metrics.completionRate}%`} desc="目標: 100%" icon={ClipboardCheck} color="bg-indigo-50 text-indigo-600" href="/training" />
+            <WidgetCard key="caregiver-incident" title="グッドキャッチ報告数" value={`${metrics.incidentReports}件`} desc="今月の報告（目標:3件）" icon={FileText} color="bg-yellow-50 text-yellow-600" href="/incident" />
+            <WidgetCard key="caregiver-skill" title="身体介助スキル習熟度" value={`レベル ${metrics.skillLevel}`} desc="リーダー評価(1-5)" icon={Activity} color="bg-blue-50 text-blue-600" href="/evaluation" />
           </>
         )
-      case 'GENERAL':
+      case 'STAFF_NURSE':
         return (
           <>
-            <WidgetCard title="医療的ケア実施件数" value={`${metrics.medicalCareCount || 0}件`} icon={Stethoscope} color="bg-red-50 text-red-500" href="/medical" />
-            <WidgetCard title="多職種連携会議参加" value={`${metrics.meetingCount || 0}回`} icon={Users} color="bg-indigo-50 text-indigo-600" href="/meetings" />
-            <WidgetCard title="服薬エラーゼロ日数" value={`${metrics.zeroErrorDays || 0}日`} desc="継続中！" icon={ShieldCheck} color="bg-emerald-50 text-emerald-600" href="/safety" />
+            <WidgetCard key="nurse-medical" title="医療的ケア実施件数" value={`${metrics.medicalCareCount || 0}件`} icon={Stethoscope} color="bg-red-50 text-red-500" href="/medical" />
+            <WidgetCard key="nurse-meeting" title="多職種連携会議参加" value={`${metrics.meetingCount || 0}回`} icon={Users} color="bg-indigo-50 text-indigo-600" href="/meetings" />
+            <WidgetCard key="nurse-safety" title="服薬エラーゼロ日数" value={`${metrics.zeroErrorDays || 0}日`} desc="継続中！" icon={ShieldCheck} color="bg-emerald-50 text-emerald-600" href="/safety" />
           </>
         )
-      case 'GENERAL':
+      case 'STAFF_SOCIAL_WORKER':
         return (
           <>
-            <WidgetCard title="入退所調整完了数" value={`${metrics.coordinationCount || 0}件`} icon={Briefcase} color="bg-purple-50 text-purple-600" href="/coordination" />
-            <WidgetCard title="家族対応件数" value={`${metrics.familyResponseCount || 0}件`} icon={Users} color="bg-orange-50 text-orange-500" href="/family-response" />
-            <WidgetCard title="稼働率維持貢献" value={`${metrics.occupancyContribution || 0}%`} icon={TrendingUp} color="bg-blue-50 text-blue-600" href="/occupancy" />
+            <WidgetCard key="worker-coordination" title="入退所調整完了数" value={`${metrics.coordinationCount || 0}件`} icon={Briefcase} color="bg-purple-50 text-purple-600" href="/coordination" />
+            <WidgetCard key="worker-family" title="家族対応件数" value={`${metrics.familyResponseCount || 0}件`} icon={Users} color="bg-orange-50 text-orange-500" href="/family-response" />
+            <WidgetCard key="worker-occupancy" title="稼働率維持貢献" value={`${metrics.occupancyContribution || 0}%`} icon={TrendingUp} color="bg-blue-50 text-blue-600" href="/occupancy" />
           </>
         )
       default:
         return (
           <>
-            <WidgetCard title="コスト削減達成率" value={`${metrics.costReduction || 0}%`} icon={TrendingUp} color="bg-teal-50 text-teal-600" href="/admin/cost" />
-            <WidgetCard title="衛生チェック完了" value={`${metrics.hygieneCheckRate || 0}%`} icon={ClipboardCheck} color="bg-green-50 text-green-600" href="/hygiene" />
-            <WidgetCard title="ミスゼロ連続日数" value={`${metrics.zeroErrorDays || 0}日`} icon={ShieldCheck} color="bg-emerald-50 text-emerald-600" href="/safety" />
+            <WidgetCard key="default-cost" title="コスト削減達成率" value={`${metrics.costReduction || 0}%`} icon={TrendingUp} color="bg-teal-50 text-teal-600" href="/admin/cost" />
+            <WidgetCard key="default-hygiene" title="衛生チェック完了" value={`${metrics.hygieneCheckRate || 0}%`} icon={ClipboardCheck} color="bg-green-50 text-green-600" href="/hygiene" />
+            <WidgetCard key="default-safety" title="ミスゼロ連続日数" value={`${metrics.zeroErrorDays || 0}日`} icon={ShieldCheck} color="bg-emerald-50 text-emerald-600" href="/safety" />
           </>
         )
     }

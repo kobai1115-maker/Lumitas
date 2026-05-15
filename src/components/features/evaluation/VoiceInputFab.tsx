@@ -145,6 +145,7 @@ export default function VoiceInputFab({ onResult }: VoiceInputFabProps) {
       <AnimatePresence>
         {resultText && !isRecording && !isProcessing && (
           <motion.div
+            key="voice-input-result-container"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
@@ -154,7 +155,7 @@ export default function VoiceInputFab({ onResult }: VoiceInputFabProps) {
               <Sparkles className="w-5 h-5 text-primary" />
               <h4 className="font-bold text-gray-800 text-sm">AIによる行動記録化</h4>
               <span className="ml-auto text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-full font-bold">
-                {resultCategory}
+                {resultCategory || '未設定'}
               </span>
             </div>
             

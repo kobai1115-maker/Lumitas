@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Development Guidelines
+- 🛡️ **[Prisma × Supabase セキュリティ運用ガイドライン](docs/supabase_prisma_workflow.md)**: 
+  テーブル追加時のSupabase Data API権限付与およびRLS有効化に関する重要な運用フローです。開発前に必ずご確認ください。
+
 ## Getting Started
 
 First, run the development server:

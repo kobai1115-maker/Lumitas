@@ -112,7 +112,7 @@ export default function IncidentPage() {
                   const Icon = style.icon
                   return (
                     <motion.div
-                      key={report.id}
+                      key={`report-${report.id || idx}`}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.05 }}
@@ -136,7 +136,7 @@ export default function IncidentPage() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
                               {[...Array(5)].map((_, i) => (
-                                <Star key={i} className={cn("w-3 h-3", i < report.aiEvaluatedPoints ? "fill-primary text-primary" : "text-gray-100")} />
+                                <Star key={`star-${report.id || idx}-${i}`} className={cn("w-3 h-3", i < report.aiEvaluatedPoints ? "fill-primary text-primary" : "text-gray-100")} />
                               ))}
                               <span className="text-[10px] font-black text-primary ml-1">+{report.aiEvaluatedPoints} pts</span>
                             </div>

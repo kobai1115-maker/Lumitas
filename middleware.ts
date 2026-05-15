@@ -1,14 +1,13 @@
-// @ts-ignore
-import { createServerClient } from '@supabase/auth-helpers-nextjs'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
  * Next.js Middleware
  * サーバーサイドとクライアントサイドのセッション情報を Cookie 経由で同期します。
- * これにより /api/auth/me などの API ルートでセッションを正しく取得できるようになります。
  */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+  const res = NextResponse.next()
 
   // 1. 静的ファイルや特定の公開パスは早期リターン（高速化）
   if (
@@ -16,58 +15,28 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/public') ||
     pathname.includes('.') // 画像、フォント、ファビコンなど
   ) {
-    return NextResponse.next()
-  }
-
-  let res = NextResponse.next({
-    request: {
-      headers: req.headers,
-    },
-  })
-
-  // 2. クッキーの存在確認（無駄なネットワークリクエストを防止）
-  const hasSession = req.cookies.getAll().some(cookie => cookie.name.includes('supabase-auth-token'))
-  
-  // 開発者用バイパス（ローカル開発環境のみ有効）
-  const isDev = process.env.NODE_ENV === 'development' && req.cookies.get('axlink_dev_session')?.value === 'DEVELOPER'
-
-  if (!hasSession && !isDev) {
     return res
   }
 
-  // 3. セッションの同期
-  // @ts-ignore
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          req.cookies.set({ name, value, ...options })
-          res = NextResponse.next({
-            request: {
-              headers: req.headers,
-            },
-          })
-          res.cookies.set({ name, value, ...options })
-        },
-        remove(name: string, options: any) {
-          req.cookies.set({ name, value: '', ...options })
-          res = NextResponse.next({
-            request: {
-              headers: req.headers,
-            },
-          })
-          res.cookies.set({ name, value: '', ...options })
-        },
-      },
-    }
-  )
+  // 2. クライアントサイドルーティングの最適化（高速化）
+  // RSCのプリフェッチリクエストはセッション同期（重い処理）をスキップする
+  if (req.headers.has('x-middleware-prefetch') || req.headers.get('purpose') === 'prefetch') {
+    return res
+  }
 
-  await supabase.auth.getSession()
+  // 開発者用バイパス（ローカル開発環境のみ有効）
+  const isDev = process.env.NODE_ENV === 'development' && req.cookies.get('axlink_dev_session')?.value === 'DEVELOPER'
+  if (isDev) {
+    return res
+  }
+
+  // 3. セッションの同期 (auth-helpers-nextjs の公式推奨方法)
+  try {
+    const supabase = createMiddlewareClient({ req, res })
+    await supabase.auth.getSession()
+  } catch (error) {
+    console.error('Middleware session sync error:', error)
+  }
 
   return res
 }

@@ -20,36 +20,57 @@ const useProfileStore = create<ProfileState>((set) => ({
   error: null,
   initialized: false,
   fetchProfile: async () => {
+    // すでに読み込み中の場合はスキップ
     set({ loading: true, error: null })
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒でタイムアウト
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
 
       const res = await fetch('/api/auth/me', { signal: controller.signal })
       clearTimeout(timeoutId)
 
       if (res.ok) {
         const data = await res.json()
+        // キャッシュ保存
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lumitas_profile_cache', JSON.stringify(data))
+        }
         set({ profile: data, error: null, initialized: true, loading: false })
       } else {
         const errorData = await res.json().catch(() => ({}))
         set({ profile: null, initialized: true, loading: false, error: errorData.error || `Profile fetch error: ${res.status}` })
         if (res.status === 401) {
-          console.warn('User not authenticated (401)')
+          localStorage.removeItem('lumitas_profile_cache')
         }
       }
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        console.error('useProfile timeout error')
-        set({ error: 'サーバーからの応答がありません（タイムアウト）', initialized: true, loading: false })
+        set({ error: 'Timeout', initialized: true, loading: false })
       } else {
-        console.error('useProfile network error:', err)
-        set({ error: 'ネットワークエラーが発生しました', initialized: true, loading: false })
+        set({ error: 'Network Error', initialized: true, loading: false })
       }
     }
   },
-  clearProfile: () => set({ profile: null, loading: false, error: null, initialized: true })
+  clearProfile: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('lumitas_profile_cache')
+    }
+    set({ profile: null, loading: false, error: null, initialized: true })
+  }
 }))
+
+// --- 初期化時にキャッシュを復元 ---
+if (typeof window !== 'undefined') {
+  const cache = localStorage.getItem('lumitas_profile_cache')
+  if (cache) {
+    try {
+      const parsed = JSON.parse(cache)
+      useProfileStore.setState({ profile: parsed, loading: false, initialized: true })
+    } catch (e) {
+      localStorage.removeItem('lumitas_profile_cache')
+    }
+  }
+}
 
 let authListenerRegistered = false;
 

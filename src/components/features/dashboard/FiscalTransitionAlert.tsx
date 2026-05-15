@@ -31,6 +31,7 @@ export function FiscalTransitionAlert() {
   return (
     <AnimatePresence>
       <motion.div
+        key="fiscal-transition-alert-container"
         initial={{ height: 0, opacity: 0, y: -20 }}
         animate={{ height: 'auto', opacity: 1, y: 0 }}
         exit={{ height: 0, opacity: 0, y: -20 }}
@@ -47,7 +48,7 @@ export function FiscalTransitionAlert() {
                 <h4 className="text-sm font-black text-amber-900 flex items-center gap-2">
                   年度切り替え時期の重要なお知らせ
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-700 uppercase tracking-tighter">
-                    Action Required
+                    要対応
                   </span>
                 </h4>
                 <p className="text-sm font-bold text-amber-800/70 leading-relaxed">

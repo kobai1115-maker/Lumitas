@@ -32,7 +32,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { profile, loading, isSystemAdmin, isCorpAdmin, isFacilityManager, isStaff, refresh } = useProfile()
+  const { profile, loading, error, initialized, isSystemAdmin, isCorpAdmin, isFacilityManager, isStaff, refresh } = useProfile()
   const [isReady, setIsReady] = useState(false)
   const [isNavigating, setIsNavigating] = useState(false)
 
@@ -43,37 +43,16 @@ export default function DashboardLayout({
     return () => clearTimeout(timer)
   }, [pathname])
 
-  // 認証ガード: ログインしていないユーザーをログイン画面へリダイレクト
+  // 認証ガード: プロフィール読み込み完了後にチェック
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // API（profile）を待つだけでなく、まずクライアント側のセッションを直接確認
-        const { data: { session }, error } = await supabase.auth.getSession()
-
-        // 認証エラー（Invalid Refresh Tokenなど）が発生した場合はログイン画面へ
-        if (error) {
-          console.error('Auth check error:', error)
-          router.push('/login')
-          return
-        }
-        
-        if (!loading) {
-          // セッションもプロフィールも無い場合にのみ、未ログインとして扱う
-          if (!session && !profile) {
-            router.push('/login')
-          } else if (profile || session) {
-            // セッションがあれば、プロフィール読み込み中であっても「準備完了」に近い状態とする
-            setIsReady(true)
-          }
-        }
-      } catch (e) {
-        console.error('Auth unexpected error:', e)
+    if (!loading && initialized) {
+      if (!profile) {
         router.push('/login')
+      } else {
+        setIsReady(true)
       }
     }
-    
-    checkAuth()
-  }, [loading, profile, router])
+  }, [loading, initialized, profile, router])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -246,7 +225,6 @@ export default function DashboardLayout({
         {/* 画面遷移アニメーションを簡略化 */}
         <main className="flex-1 w-full max-w-4xl mx-auto px-4 py-6 md:px-8 md:py-10 pb-24 overflow-x-hidden">
           <motion.div
-            key={pathname}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15, ease: "linear" }}

@@ -216,10 +216,10 @@ export default function AdminStaffPage() {
             </Button>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger render={
-                <Button className="h-12 px-8 rounded-xl bg-primary text-white font-black hover:scale-[1.02] shadow-xl shadow-primary/20 transition-all">
+                <button className="h-12 px-8 rounded-xl bg-primary text-white font-black hover:scale-[1.02] shadow-xl shadow-primary/20 transition-all flex items-center justify-center">
                   <Plus className="w-5 h-5 mr-2" />
                   新規登録
-                </Button>
+                </button>
               } />
               <DialogContent className="max-w-xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
                 <form onSubmit={handleAddStaff}>
